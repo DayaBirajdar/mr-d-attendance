@@ -1,0 +1,67 @@
+/* ==========================================
+   SIDEBAR
+========================================== */
+
+.sidebar{
+    width:260px;
+    background:#ffffff;
+    border-right:1px solid var(--border);
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    padding:20px 16px;
+    box-shadow:var(--shadow-sm);
+}
+
+.sidebar-top,
+.sidebar-bottom{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+
+.menu{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    text-decoration:none;
+    color:var(--text);
+    padding:14px 18px;
+    border-radius:14px;
+    font-weight:600;
+    transition:all .25s ease;
+}
+
+.menu svg{
+    font-size:20px;
+}
+
+.menu:hover{
+    background:#eff6ff;
+    color:var(--primary);
+}
+
+.menu.active{
+    background:var(--primary);
+    color:white;
+}
+
+.logout-btn{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    width:100%;
+    border:none;
+    background:transparent;
+    padding:14px 18px;
+    border-radius:14px;
+    cursor:pointer;
+    font-size:15px;
+    font-weight:600;
+    color:#ef4444;
+    transition:all .25s ease;
+}
+
+.logout-btn:hover{
+    background:#fee2e2;
+}

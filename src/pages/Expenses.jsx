@@ -1,0 +1,208 @@
+import { useEffect, useState } from "react";
+import { supabase } from "../lib/supabase";
+
+import ExpenseToolbar from "../components/expenses/ExpenseToolbar";
+import ExpenseTable from "../components/expenses/ExpenseTable";
+import AddExpenseModal from "../components/expenses/AddExpenseModal";
+import ExpenseChart from "../components/expenses/ExpenseChart";
+
+function Expenses() {
+  const [expenses, setExpenses] = useState([]);
+  const [search, setSearch] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [selectedExpense, setSelectedExpense] = useState(null);
+
+  useEffect(() => {
+    loadExpenses();
+  }, []);
+
+  async function loadExpenses() {
+    const { data, error } = await supabase
+      .from("expenses")
+      .select("*")
+      .eq("is_deleted", false)
+      .order("id", { ascending: false });
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    setExpenses(data || []);
+  }
+
+  async function handleSave(expense) {
+    let error;
+
+    if (selectedExpense) {
+      ({ error } = await supabase
+        .from("expenses")
+        .update(expense)
+        .eq("id", selectedExpense.id));
+    } else {
+      ({ error } = await supabase
+        .from("expenses")
+        .insert([expense]));
+    }
+
+    if (error) {
+      console.error(error);
+      alert(JSON.stringify(error, null, 2));
+      return;
+    }
+
+    setShowModal(false);
+    setSelectedExpense(null);
+    loadExpenses();
+  }
+
+  async function handleDelete(id) {
+    if (!window.confirm("Move this expense to Recycle Bin?"))
+      return;
+
+    const expense = expenses.find((e) => e.id === id);
+
+    if (!expense) return;
+
+    const { error: recycleError } = await supabase
+      .from("recycle_bin")
+      .insert([
+        {
+          original_table: "expenses",
+          original_id: expense.id,
+          data: expense,
+          deleted_by: "Admin",
+          deleted_at: new Date().toISOString(),
+        },
+      ]);
+
+    if (recycleError) {
+      console.error(recycleError);
+      alert(JSON.stringify(recycleError, null, 2));
+      return;
+    }
+
+    const { error } = await supabase
+      .from("expenses")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.error(error);
+      alert(JSON.stringify(error, null, 2));
+      return;
+    }
+
+    loadExpenses();
+  }
+
+  function handleEdit(expense) {
+    setSelectedExpense(expense);
+    setShowModal(true);
+  }
+
+  const filteredExpenses = expenses.filter((expense) =>
+    (expense.expense_name || "")
+      .toLowerCase()
+      .includes(search.toLowerCase())
+  );
+
+  const totalAmount = filteredExpenses.reduce(
+    (sum, item) => sum + Number(item.amount || 0),
+    0
+  );
+
+  const thisMonthCount = filteredExpenses.filter((item) => {
+    if (!item.expense_date) return false;
+
+    const expenseDate = new Date(item.expense_date);
+    const today = new Date();
+
+    return (
+      expenseDate.getMonth() === today.getMonth() &&
+      expenseDate.getFullYear() === today.getFullYear()
+    );
+  }).length;
+
+  const todayCount = filteredExpenses.filter((item) => {
+    if (!item.expense_date) return false;
+
+    return (
+      item.expense_date ===
+      new Date().toISOString().split("T")[0]
+    );
+  }).length;
+
+  return (
+    <div className="inventory-page">
+
+      <h1 className="page-title">
+        💰 Expense Management
+      </h1>
+
+      <p className="page-subtitle">
+        Manage all office expenses.
+      </p>
+
+      <ExpenseToolbar
+        search={search}
+        setSearch={setSearch}
+        onAdd={() => {
+          setSelectedExpense(null);
+          setShowModal(true);
+        }}
+      />
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
+          gap: "20px",
+          marginBottom: "25px",
+        }}
+      >
+        <div className="summary-card">
+          <h3>Total Expenses</h3>
+          <h1>{expenses.length}</h1>
+        </div>
+
+        <div className="summary-card">
+          <h3>Total Amount</h3>
+          <h1>₹ {totalAmount.toLocaleString()}</h1>
+        </div>
+
+        <div className="summary-card">
+          <h3>This Month</h3>
+          <h1>{thisMonthCount}</h1>
+        </div>
+
+        <div className="summary-card">
+          <h3>Today's Expenses</h3>
+          <h1>{todayCount}</h1>
+        </div>
+      </div>
+
+      <ExpenseChart expenses={filteredExpenses} />
+
+      <ExpenseTable
+        expenses={filteredExpenses}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
+
+      {showModal && (
+        <AddExpenseModal
+          expense={selectedExpense}
+          onClose={() => {
+            setShowModal(false);
+            setSelectedExpense(null);
+          }}
+          onSave={handleSave}
+        />
+      )}
+
+    </div>
+  );
+}
+
+export default Expenses;

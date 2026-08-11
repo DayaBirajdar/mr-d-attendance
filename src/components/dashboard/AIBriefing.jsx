@@ -1,0 +1,171 @@
+import { useEffect, useState } from "react";
+import { supabase } from "../../lib/supabase";
+
+function AIBriefing() {
+  const [summary, setSummary] = useState({
+    inventory: 0,
+    expenses: 0,
+    events: 0,
+    documents: 0,
+    vendors: 0,
+    visitorsToday: 0,
+    checkedIn: 0,
+  });
+
+  useEffect(() => {
+    loadSummary();
+  }, []);
+
+  async function loadSummary() {
+    const today = new Date().toISOString().slice(0, 10);
+
+    const [
+      inventory,
+      expenses,
+      events,
+      documents,
+      vendors,
+      visitors,
+    ] = await Promise.all([
+      supabase
+        .from("inventory")
+        .select("*", { count: "exact", head: true }),
+
+      supabase
+        .from("expenses")
+        .select("*", { count: "exact", head: true }),
+
+      supabase
+        .from("events")
+        .select("*", { count: "exact", head: true }),
+
+      supabase
+        .from("documents")
+        .select("*", { count: "exact", head: true }),
+
+      supabase
+        .from("vendors")
+        .select("*", { count: "exact", head: true }),
+
+      supabase
+        .from("visitors")
+        .select("*"),
+    ]);
+
+    const visitorList = visitors.data || [];
+
+    const visitorsToday = visitorList.filter(
+      (v) =>
+        v.created_at &&
+        v.created_at.slice(0, 10) === today
+    ).length;
+
+    const checkedIn = visitorList.filter(
+      (v) => v.status === "Checked In"
+    ).length;
+
+    setSummary({
+      inventory: inventory.count || 0,
+      expenses: expenses.count || 0,
+      events: events.count || 0,
+      documents: documents.count || 0,
+      vendors: vendors.count || 0,
+      visitorsToday,
+      checkedIn,
+    });
+  }
+
+  const hour = new Date().getHours();
+
+  let greeting = "Good Evening";
+
+  if (hour < 12) greeting = "Good Morning";
+  else if (hour < 17) greeting = "Good Afternoon";
+
+  return (
+    <div className="ai-briefing">
+
+      <h2>🤖 {greeting}, Daya 👋</h2>
+
+      <p>Here's your Operations Summary for today.</p>
+
+      <ul>
+
+        <li>
+          👥 Visitors Today :
+          <strong> {summary.visitorsToday}</strong>
+        </li>
+
+        <li>
+          🟢 Currently Checked In :
+          <strong> {summary.checkedIn}</strong>
+        </li>
+
+        <li>
+          📦 Inventory Items :
+          <strong> {summary.inventory}</strong>
+        </li>
+
+        <li>
+          💰 Expenses :
+          <strong> {summary.expenses}</strong>
+        </li>
+
+        <li>
+          📅 Events :
+          <strong> {summary.events}</strong>
+        </li>
+
+        <li>
+          📄 Documents :
+          <strong> {summary.documents}</strong>
+        </li>
+
+        <li>
+          👥 Vendors :
+          <strong> {summary.vendors}</strong>
+        </li>
+
+      </ul>
+
+      <hr
+        style={{
+          margin: "20px 0",
+        }}
+      />
+
+      <h3>📌 Today's Recommendations</h3>
+
+      <ul>
+
+        {summary.checkedIn > 0 && (
+          <li>
+            🟢 {summary.checkedIn} visitor(s) are still inside the office.
+          </li>
+        )}
+
+        {summary.events > 0 && (
+          <li>
+            📅 Review your upcoming events.
+          </li>
+        )}
+
+        {summary.inventory < 10 && (
+          <li>
+            📦 Inventory is running low.
+          </li>
+        )}
+
+        {summary.documents > 0 && (
+          <li>
+            📄 Review uploaded documents.
+          </li>
+        )}
+
+      </ul>
+
+    </div>
+  );
+}
+
+export default AIBriefing;

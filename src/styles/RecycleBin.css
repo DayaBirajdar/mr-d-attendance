@@ -1,0 +1,45 @@
+.recycle-page {
+  padding: 25px;
+}
+
+.recycle-page h1 {
+  margin-bottom: 20px;
+}
+
+.inventory-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}
+
+.inventory-table th,
+.inventory-table td {
+  border: 1px solid #ddd;
+  padding: 12px;
+}
+
+.inventory-table th {
+  background: #1d3c78;
+  color: white;
+}
+
+.inventory-table tr:nth-child(even) {
+  background: #f8f8f8;
+}
+
+.inventory-table button {
+  padding: 8px 12px;
+  border: none;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.inventory-table button:first-child {
+  background: #28a745;
+  color: white;
+}
+
+.inventory-table button:last-child {
+  background: #dc3545;
+  color: white;
+}

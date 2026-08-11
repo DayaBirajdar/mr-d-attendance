@@ -1,0 +1,52 @@
+/* ==========================================
+   DASHBOARD CARDS
+========================================== */
+
+.dashboard-card{
+    background:#ffffff;
+    border-radius:18px;
+    padding:24px;
+    border:1px solid var(--border);
+    box-shadow:var(--shadow-sm);
+    transition:var(--transition);
+    display:flex;
+    align-items:center;
+    gap:20px;
+    cursor:pointer;
+}
+
+.dashboard-card:hover{
+    transform:translateY(-5px);
+    box-shadow:var(--shadow-md);
+}
+
+.dashboard-icon{
+    width:70px;
+    height:70px;
+    border-radius:18px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-size:34px;
+    background:#f3f4f6;
+}
+
+.dashboard-info{
+    display:flex;
+    flex-direction:column;
+}
+
+.dashboard-info h3{
+    margin:0;
+    font-size:15px;
+    font-weight:600;
+    color:var(--text-light);
+}
+
+.dashboard-info h1{
+    margin-top:8px;
+    margin-bottom:0;
+    font-size:34px;
+    font-weight:800;
+    color:var(--secondary);
+}
