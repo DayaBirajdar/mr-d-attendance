@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import { logActivity } from "../lib/activityLog";
 
 import ExpenseToolbar from "../components/expenses/ExpenseToolbar";
 import ExpenseTable from "../components/expenses/ExpenseTable";
@@ -12,9 +14,75 @@ function Expenses() {
   const [showModal, setShowModal] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState(null);
 
+  const [searchParams, setSearchParams] =
+    useSearchParams();
+
+  const focusedExpenseId =
+    searchParams.get("focus")
+      ? Number(searchParams.get("focus"))
+      : null;
+
+
   useEffect(() => {
     loadExpenses();
   }, []);
+
+  useEffect(() => {
+    if (searchParams.get("action") === "add") {
+      setSelectedExpense(null);
+      setShowModal(true);
+
+      setSearchParams(
+        {},
+        { replace: true }
+      );
+    }
+  }, [
+    searchParams,
+    setSearchParams,
+  ]);
+
+  useEffect(() => {
+    if (
+      !focusedExpenseId ||
+      expenses.length === 0
+    ) {
+      return;
+    }
+
+    const focusedExpense =
+      expenses.find(
+        (expense) =>
+          Number(expense.id) ===
+          Number(focusedExpenseId)
+      );
+
+    if (!focusedExpense) {
+      return;
+    }
+
+    setSearch(
+      focusedExpense.expense_name || ""
+    );
+
+    setTimeout(() => {
+      const row =
+        document.querySelector(
+          `[data-expense-id="${focusedExpenseId}"]`
+        );
+
+      if (row) {
+        row.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+    }, 150);
+  }, [
+    focusedExpenseId,
+    expenses,
+  ]);
+
 
   async function loadExpenses() {
     const { data, error } = await supabase
@@ -50,6 +118,19 @@ function Expenses() {
       alert(JSON.stringify(error, null, 2));
       return;
     }
+
+    await logActivity({
+      module: "Expenses",
+      action: selectedExpense ? "Updated" : "Added",
+      title: expense.expense_name || "Expense",
+      details: [
+        expense.category && `Category: ${expense.category}`,
+        expense.amount && `Amount: ₹${expense.amount}`,
+        expense.expense_date && `Date: ${expense.expense_date}`,
+      ]
+        .filter(Boolean)
+        .join(" · "),
+    });
 
     setShowModal(false);
     setSelectedExpense(null);
@@ -93,6 +174,15 @@ function Expenses() {
       return;
     }
 
+    await logActivity({
+      module: "Expenses",
+      action: "Moved to Recycle Bin",
+      title: expense.expense_name || "Expense",
+      details: expense.amount
+        ? `Amount: ₹${expense.amount}`
+        : null,
+    });
+
     loadExpenses();
   }
 
@@ -101,11 +191,17 @@ function Expenses() {
     setShowModal(true);
   }
 
-  const filteredExpenses = expenses.filter((expense) =>
-    (expense.expense_name || "")
-      .toLowerCase()
-      .includes(search.toLowerCase())
-  );
+  const filteredExpenses = focusedExpenseId
+    ? expenses.filter(
+        (expense) =>
+          Number(expense.id) ===
+          Number(focusedExpenseId)
+      )
+    : expenses.filter((expense) =>
+        (expense.expense_name || "")
+          .toLowerCase()
+          .includes(search.toLowerCase())
+      );
 
   const totalAmount = filteredExpenses.reduce(
     (sum, item) => sum + Number(item.amount || 0),
@@ -186,6 +282,7 @@ function Expenses() {
 
       <ExpenseTable
         expenses={filteredExpenses}
+        focusedExpenseId={focusedExpenseId}
         onEdit={handleEdit}
         onDelete={handleDelete}
       />

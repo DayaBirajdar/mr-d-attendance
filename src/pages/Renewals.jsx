@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { syncRenewal } from "../lib/googleSync";
+import { logActivity } from "../lib/activityLog";
 
 import RenewalToolbar from "../components/renewals/RenewalToolbar";
 import AddRenewalModal from "../components/renewals/AddRenewalModal";
@@ -12,9 +14,75 @@ function Renewals() {
   const [showModal, setShowModal] = useState(false);
   const [selectedRenewal, setSelectedRenewal] = useState(null);
 
+  const [searchParams, setSearchParams] =
+    useSearchParams();
+
+  const focusedRenewalId =
+    searchParams.get("focus")
+      ? Number(searchParams.get("focus"))
+      : null;
+
+
   useEffect(() => {
     loadRenewals();
   }, []);
+
+  useEffect(() => {
+    if (searchParams.get("action") === "add") {
+      setSelectedRenewal(null);
+      setShowModal(true);
+
+      setSearchParams(
+        {},
+        { replace: true }
+      );
+    }
+  }, [
+    searchParams,
+    setSearchParams,
+  ]);
+
+  useEffect(() => {
+    if (
+      !focusedRenewalId ||
+      renewals.length === 0
+    ) {
+      return;
+    }
+
+    const focusedRenewal =
+      renewals.find(
+        (item) =>
+          Number(item.id) ===
+          Number(focusedRenewalId)
+      );
+
+    if (!focusedRenewal) {
+      return;
+    }
+
+    setSearch(
+      focusedRenewal.title || ""
+    );
+
+    setTimeout(() => {
+      const row =
+        document.querySelector(
+          `[data-renewal-id="${focusedRenewalId}"]`
+        );
+
+      if (row) {
+        row.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+    }, 150);
+  }, [
+    focusedRenewalId,
+    renewals,
+  ]);
+
 
   async function loadRenewals() {
     const { data, error } = await supabase
@@ -72,16 +140,36 @@ function Renewals() {
     return;
   }
 
+  await logActivity({
+    module: "Renewals",
+    action: selectedRenewal ? "Updated" : "Added",
+    title: renewal.title || "Renewal",
+    details: [
+      renewal.category && `Category: ${renewal.category}`,
+      renewal.vendor && `Vendor: ${renewal.vendor}`,
+      renewal.renewal_date && `Due: ${renewal.renewal_date}`,
+      renewal.amount && `Amount: ₹${renewal.amount}`,
+    ]
+      .filter(Boolean)
+      .join(" · "),
+  });
+
   setShowModal(false);
   setSelectedRenewal(null);
   loadRenewals();
 }
 
-  const filteredRenewals = renewals.filter((item) =>
-    (item.title || "")
-      .toLowerCase()
-      .includes(search.toLowerCase())
-  );
+  const filteredRenewals = focusedRenewalId
+    ? renewals.filter(
+        (item) =>
+          Number(item.id) ===
+          Number(focusedRenewalId)
+      )
+    : renewals.filter((item) =>
+        (item.title || "")
+          .toLowerCase()
+          .includes(search.toLowerCase())
+      );
 
   return (
     <div className="inventory-page">
@@ -110,6 +198,7 @@ function Renewals() {
 
       <RenewalTable
   renewals={filteredRenewals}
+  focusedRenewalId={focusedRenewalId}
   refresh={loadRenewals}
   onEdit={(item) => {
     setSelectedRenewal(item);

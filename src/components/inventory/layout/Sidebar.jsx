@@ -1,4 +1,5 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
+import { supabase } from "../../../lib/supabase";
 
 import {
   FiHome,
@@ -13,9 +14,41 @@ import {
   FiLogOut,
   FiBell,
   FiClock,
+  FiClipboard,
+  FiFileText,
 } from "react-icons/fi";
 
 function Sidebar() {
+
+  const navigate =
+    useNavigate();
+
+  async function handleLogout() {
+
+    const { error } =
+      await supabase.auth.signOut();
+
+    if (error) {
+      console.error(
+        "Logout error:",
+        error
+      );
+
+      alert(
+        "Unable to logout."
+      );
+
+      return;
+    }
+
+    navigate(
+      "/login",
+      {
+        replace: true,
+      }
+    );
+  }
+
   return (
     <aside className="sidebar">
 
@@ -62,6 +95,16 @@ function Sidebar() {
         </NavLink>
 
         <NavLink
+          to="/leaves"
+          className={({ isActive }) =>
+            `menu ${isActive ? "active" : ""}`
+          }
+        >
+          <FiClipboard />
+          <span>Leave Management</span>
+        </NavLink>
+
+        <NavLink
           to="/recycle-bin"
           className={({ isActive }) =>
             `menu ${isActive ? "active" : ""}`
@@ -99,6 +142,17 @@ function Sidebar() {
         >
           <FiUsers />
           <span>Vendors</span>
+        </NavLink>
+
+
+        <NavLink
+          to="/documents"
+          className={({ isActive }) =>
+            `menu ${isActive ? "active" : ""}`
+          }
+        >
+          <FiFileText />
+          <span>Documents</span>
         </NavLink>
 
         <NavLink
@@ -145,7 +199,10 @@ function Sidebar() {
           <span>Settings</span>
         </NavLink>
 
-        <button className="logout-btn">
+        <button
+          className="logout-btn"
+          onClick={handleLogout}
+        >
           <FiLogOut />
           <span>Logout</span>
         </button>

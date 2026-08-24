@@ -1,5 +1,6 @@
 function InventoryTable({
   items,
+  focusedInventoryId,
   getStatusClass,
   onEdit,
   onDelete,
@@ -25,7 +26,16 @@ function InventoryTable({
 
         {items.map((item) => (
 
-          <tr key={item.id}>
+          <tr
+            key={item.id}
+            data-inventory-id={item.id}
+            className={
+              Number(item.id) ===
+              Number(focusedInventoryId)
+                ? "inventory-focus-row"
+                : ""
+            }
+          >
 
             <td>{item.id}</td>
 

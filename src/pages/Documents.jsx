@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 
 import DocumentToolbar from "../components/documents/DocumentToolbar";
@@ -11,9 +12,58 @@ function Documents() {
   const [showModal, setShowModal] = useState(false);
 const [selectedDocument, setSelectedDocument] = useState(null);
 
+  const [searchParams] =
+    useSearchParams();
+
+  const focusedDocumentId =
+    searchParams.get("focus")
+      ? Number(searchParams.get("focus"))
+      : null;
+
   useEffect(() => {
     loadDocuments();
   }, []);
+
+  useEffect(() => {
+    if (
+      !focusedDocumentId ||
+      documents.length === 0
+    ) {
+      return;
+    }
+
+    const focusedDocument =
+      documents.find(
+        (doc) =>
+          Number(doc.id) ===
+          Number(focusedDocumentId)
+      );
+
+    if (!focusedDocument) {
+      return;
+    }
+
+    setSearch(
+      focusedDocument.title || ""
+    );
+
+    setTimeout(() => {
+      const row =
+        document.querySelector(
+          `[data-document-id="${focusedDocumentId}"]`
+        );
+
+      if (row) {
+        row.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+    }, 150);
+  }, [
+    focusedDocumentId,
+    documents,
+  ]);
 
   async function loadDocuments() {
     const { data, error } = await supabase
@@ -59,6 +109,7 @@ const [selectedDocument, setSelectedDocument] = useState(null);
 
       <DocumentTable
   documents={filteredDocuments}
+  focusedDocumentId={focusedDocumentId}
   refresh={loadDocuments}
   onEdit={(doc) => {
     setSelectedDocument(doc);

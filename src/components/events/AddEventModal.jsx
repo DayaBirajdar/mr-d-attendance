@@ -12,7 +12,7 @@ function AddEventModal({
   const [eventTime, setEventTime] = useState("");
   const [budget, setBudget] = useState("");
   const [status, setStatus] = useState("Planned");
-  const [notes, setNotes] = useState("");
+  const [remarks, setRemarks] = useState("");
 
   useEffect(() => {
     if (item) {
@@ -23,7 +23,16 @@ function AddEventModal({
       setEventTime(item.event_time || "");
       setBudget(item.budget || "");
       setStatus(item.status || "Planned");
-      setNotes(item.notes || "");
+      setRemarks(item.remarks || "");
+    } else {
+      setTitle("");
+      setVenue("");
+      setOrganizer("");
+      setEventDate("");
+      setEventTime("");
+      setBudget("");
+      setStatus("Planned");
+      setRemarks("");
     }
   }, [item]);
 
@@ -33,26 +42,23 @@ function AddEventModal({
     onSave({
       title,
       venue,
-      organizer,
+      owner: organizer,
       event_date: eventDate,
       event_time: eventTime,
       budget,
       status,
-      notes,
+      remarks,
     });
   }
 
   return (
     <div className="modal-overlay">
-
       <div className="modal">
-
         <h2>
           {item ? "✏️ Edit Event" : "📅 Add Event"}
         </h2>
 
         <form onSubmit={handleSubmit}>
-
           <input
             type="text"
             placeholder="Event Title"
@@ -100,17 +106,17 @@ function AddEventModal({
             value={status}
             onChange={(e) => setStatus(e.target.value)}
           >
-            <option>Planned</option>
-            <option>Ongoing</option>
-            <option>Completed</option>
-            <option>Cancelled</option>
+            <option value="Planned">Planned</option>
+            <option value="Ongoing">Ongoing</option>
+            <option value="Completed">Completed</option>
+            <option value="Cancelled">Cancelled</option>
           </select>
 
           <textarea
-            placeholder="Notes"
+            placeholder="Remarks"
             rows="4"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
+            value={remarks}
+            onChange={(e) => setRemarks(e.target.value)}
           />
 
           <div
@@ -120,7 +126,6 @@ function AddEventModal({
               marginTop: "20px",
             }}
           >
-
             <button type="submit">
               {item ? "Update Event" : "Save Event"}
             </button>
@@ -131,13 +136,9 @@ function AddEventModal({
             >
               Cancel
             </button>
-
           </div>
-
         </form>
-
       </div>
-
     </div>
   );
 }

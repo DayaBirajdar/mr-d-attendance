@@ -1,0 +1,208 @@
+.mrd-login-page{
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+  background:
+    linear-gradient(
+      135deg,
+      #eef4ff,
+      #f8fafc
+    );
+}
+
+.mrd-login-card{
+  width:100%;
+  max-width:420px;
+  padding:36px;
+  background:#ffffff;
+  border:1px solid #e2e8f0;
+  border-radius:22px;
+  box-shadow:
+    0 24px 60px
+    rgba(15,23,42,.14);
+}
+
+.mrd-login-brand{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  margin-bottom:28px;
+}
+
+.mrd-login-logo{
+  width:62px;
+  height:62px;
+}
+
+.mrd-login-brand h1{
+  margin:0;
+  color:#2563eb;
+  font-size:32px;
+}
+
+.mrd-login-brand p{
+  margin:3px 0 0;
+  color:#64748b;
+  font-size:13px;
+}
+
+.mrd-login-card h2{
+  margin:0 0 8px;
+  color:#0f172a;
+  font-size:26px;
+}
+
+.mrd-login-subtitle{
+  margin-bottom:25px;
+  color:#64748b;
+  font-size:14px;
+}
+
+.mrd-login-card form{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.mrd-login-card label{
+  font-weight:700;
+  color:#334155;
+  font-size:13px;
+}
+
+.mrd-login-card input{
+  height:46px;
+  padding:0 14px;
+  margin-bottom:8px;
+  border:1px solid #cbd5e1;
+  border-radius:10px;
+  outline:none;
+  font-size:14px;
+}
+
+.mrd-login-card input:focus{
+  border-color:#2563eb;
+  box-shadow:
+    0 0 0 3px
+    rgba(37,99,235,.12);
+}
+
+.mrd-login-button{
+  height:48px;
+  margin-top:8px;
+  border:none;
+  border-radius:11px;
+  background:#2563eb;
+  color:#ffffff;
+  font-weight:700;
+  cursor:pointer;
+}
+
+.mrd-login-button:disabled{
+  opacity:.65;
+  cursor:not-allowed;
+}
+
+.mrd-login-error{
+  padding:10px 12px;
+  border-radius:9px;
+  background:#fee2e2;
+  color:#991b1b;
+  font-size:13px;
+  font-weight:600;
+}
+
+.mrd-login-footer{
+  margin-top:28px;
+  text-align:center;
+  color:#64748b;
+  font-size:12px;
+  line-height:1.6;
+}
+
+/* =========================================================
+   MR.D LOGIN — DARK MODE
+   ========================================================= */
+
+:root[data-theme="dark"] .mrd-login-page{
+  background:
+    radial-gradient(
+      circle at top,
+      #172033 0%,
+      #0f172a 45%,
+      #0b1120 100%
+    ) !important;
+}
+
+:root[data-theme="dark"] .mrd-login-card{
+  background:
+    linear-gradient(
+      145deg,
+      #1f2937 0%,
+      #182230 55%,
+      #141e2b 100%
+    ) !important;
+
+  border-color:#334155 !important;
+
+  box-shadow:
+    0 24px 60px
+    rgba(0,0,0,.42) !important;
+}
+
+:root[data-theme="dark"] .mrd-login-brand h1{
+  color:#ffffff !important;
+}
+
+:root[data-theme="dark"] .mrd-login-brand p{
+  color:#94a3b8 !important;
+}
+
+:root[data-theme="dark"] .mrd-login-card h2{
+  color:#ffffff !important;
+}
+
+:root[data-theme="dark"] .mrd-login-subtitle{
+  color:#cbd5e1 !important;
+}
+
+:root[data-theme="dark"] .mrd-login-card label{
+  color:#f8fafc !important;
+  font-weight:700 !important;
+}
+
+:root[data-theme="dark"] .mrd-login-card input{
+  background:#243244 !important;
+  color:#ffffff !important;
+
+  border-color:#475569 !important;
+}
+
+:root[data-theme="dark"] .mrd-login-card input::placeholder{
+  color:#94a3b8 !important;
+}
+
+:root[data-theme="dark"] .mrd-login-card input:focus{
+  border-color:#3b82f6 !important;
+
+  box-shadow:
+    0 0 0 3px
+    rgba(59,130,246,.18) !important;
+}
+
+:root[data-theme="dark"] .mrd-login-button{
+  background:
+    linear-gradient(
+      135deg,
+      #2563eb,
+      #3b82f6
+    ) !important;
+
+  color:#ffffff !important;
+}
+
+:root[data-theme="dark"] .mrd-login-footer{
+  color:#94a3b8 !important;
+}

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabase";
+import { logActivity } from "../../lib/activityLog";
 
 function AddDocumentModal({
   item,
@@ -87,6 +88,18 @@ function AddDocumentModal({
         setUploading(false);
         return;
       }
+
+      await logActivity({
+        module: "Documents",
+        action: item ? "Updated" : "Uploaded",
+        title: title || "Document",
+        details: [
+          category && `Category: ${category}`,
+          file?.name && `File: ${file.name}`,
+        ]
+          .filter(Boolean)
+          .join(" · "),
+      });
 
       setUploading(false);
       refresh();

@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import { logActivity } from "../lib/activityLog";
 
 import EmployeeToolbar from "../components/employees/EmployeeToolbar";
 import EmployeeTable from "../components/employees/EmployeeTable";
@@ -11,9 +13,60 @@ function Employees() {
   const [showModal, setShowModal] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
 
+  const [searchParams, setSearchParams] =
+    useSearchParams();
+
+  const focusedEmployeeId =
+    searchParams.get("focus")
+      ? Number(searchParams.get("focus"))
+      : null;
+
   useEffect(() => {
     loadEmployees();
   }, []);
+
+  useEffect(() => {
+    if (
+      !focusedEmployeeId ||
+      employees.length === 0
+    ) {
+      return;
+    }
+
+    const focusedEmployee =
+      employees.find(
+        (employee) =>
+          Number(employee.id) ===
+          Number(focusedEmployeeId)
+      );
+
+    if (!focusedEmployee) {
+      return;
+    }
+
+    setSearch(
+      focusedEmployee.full_name ||
+      focusedEmployee.employee_id ||
+      ""
+    );
+
+    setTimeout(() => {
+      const row =
+        document.querySelector(
+          `[data-employee-id="${focusedEmployeeId}"]`
+        );
+
+      if (row) {
+        row.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+    }, 150);
+  }, [
+    focusedEmployeeId,
+    employees,
+  ]);
 
   async function loadEmployees() {
     const { data, error } = await supabase
@@ -87,6 +140,28 @@ function Employees() {
     return;
   }
 
+  await logActivity({
+    module: "Employees",
+    action: selectedEmployee ? "Updated" : "Added",
+    title: employee.full_name || employee.employee_id || "Employee",
+    details: [
+      employee.employee_id
+        ? `Employee ID: ${employee.employee_id}`
+        : "",
+      employee.department
+        ? `Department: ${employee.department}`
+        : "",
+      employee.designation
+        ? `Designation: ${employee.designation}`
+        : "",
+      employee.status
+        ? `Status: ${employee.status}`
+        : "",
+    ]
+      .filter(Boolean)
+      .join(" · "),
+  });
+
   setShowModal(false);
   setSelectedEmployee(null);
 
@@ -128,6 +203,25 @@ function Employees() {
       alert(JSON.stringify(error, null, 2));
       return;
     }
+
+    await logActivity({
+      module: "Employees",
+      action: "Moved to Recycle Bin",
+      title: employee.full_name || employee.employee_id || "Employee",
+      details: [
+        employee.employee_id
+          ? `Employee ID: ${employee.employee_id}`
+          : "",
+        employee.department
+          ? `Department: ${employee.department}`
+          : "",
+        employee.designation
+          ? `Designation: ${employee.designation}`
+          : "",
+      ]
+        .filter(Boolean)
+        .join(" · "),
+    });
 
     loadEmployees();
   }
@@ -208,6 +302,7 @@ function Employees() {
 
       <EmployeeTable
         employees={filteredEmployees}
+        focusedEmployeeId={focusedEmployeeId}
         onEdit={handleEdit}
         onDelete={handleDelete}
       />

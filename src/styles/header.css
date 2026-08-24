@@ -2,194 +2,525 @@
    HEADER
 ========================================== */
 
-.header{
+.header {
+  min-height: 92px;
+  width: 100%;
 
-    height:90px;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,.98) 0%,
+      rgba(248,250,252,.98) 100%
+    );
 
-    background:white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 
-    display:flex;
+  padding: 0 28px;
 
-    justify-content:space-between;
+  border-bottom:
+    1px solid rgba(100,116,139,.16);
 
-    align-items:center;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,1) inset,
+    0 6px 18px rgba(15,23,42,.07),
+    0 18px 36px rgba(15,23,42,.045);
 
-    padding:0 30px;
-
-    border-bottom:1px solid var(--border);
-
-    box-shadow:0 3px 20px rgba(0,0,0,.05);
-
-    position:sticky;
-
-    top:0;
-
-    z-index:999;
-
+  position: sticky;
+  top: 0;
+  z-index: 999;
 }
 
-/* =========================
-   LEFT SIDE
-========================= */
+/* ==========================================
+   LEFT SIDE / MR.D BRAND
+========================================== */
 
-.brand{
-
-    display:flex;
-
-    align-items:center;
-
-    gap:18px;
-
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 250px;
 }
 
-.logo{
+.mrd-logo {
+  width: 58px;
+  height: 58px;
 
-    width:70px;
+  object-fit: contain;
 
-    height:70px;
+  filter:
+    drop-shadow(
+      0 7px 12px
+      rgba(37,99,235,.16)
+    );
 
-    object-fit:contain;
-
-    border-radius:14px;
-
+  transition:
+    transform .2s ease,
+    filter .2s ease;
 }
 
-.brand h1{
+.mrd-logo:hover {
+  transform:
+    translateY(-2px)
+    scale(1.03);
 
-    font-size:34px;
-
-    font-weight:800;
-
-    color:var(--primary);
-
-    line-height:1;
-
+  filter:
+    drop-shadow(
+      0 10px 18px
+      rgba(37,99,235,.22)
+    );
 }
 
-.brand p{
-
-    color:var(--text-light);
-
-    margin-top:6px;
-
-    font-size:14px;
-
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
-/* =========================
+.brand h1 {
+  font-size: 31px;
+  font-weight: 850;
+
+  color: #1d4ed8;
+
+  line-height: 1;
+
+  margin: 0;
+
+  letter-spacing: -.02em;
+
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.95),
+    0 3px 10px rgba(37,99,235,.09);
+}
+
+.brand p {
+  color: #64748b;
+
+  margin-top: 6px;
+  margin-bottom: 0;
+
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* ==========================================
    SEARCH BAR
-========================= */
+========================================== */
 
-.search-bar{
+.search-bar {
+  flex: 1;
 
-    flex:1;
+  display: flex;
+  align-items: center;
 
-    display:flex;
+  max-width: 520px;
 
-    align-items:center;
+  margin: 0 34px;
 
-    max-width:520px;
-
-    margin:0 40px;
-
-    gap:10px;
-
+  gap: 10px;
 }
 
-.search-bar input{
+.search-bar input {
+  flex: 1;
 
-    flex:1;
+  padding: 13px 18px;
 
-    padding:13px 18px;
+  border:
+    1px solid rgba(100,116,139,.20);
 
-    border:1px solid var(--border);
+  border-radius: 14px;
 
-    border-radius:14px;
+  background:
+    linear-gradient(
+      180deg,
+      #ffffff,
+      #f8fafc
+    );
 
-    background:white;
+  font-size: 15px;
 
-    font-size:15px;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,1) inset,
+    0 4px 10px rgba(15,23,42,.04);
 
-    transition:.25s;
-
+  transition:
+    border-color .22s ease,
+    box-shadow .22s ease,
+    transform .22s ease;
 }
 
-.search-bar input:focus{
+.search-bar input:focus {
+  outline: none;
 
-    outline:none;
+  border-color: #2563eb;
 
-    border-color:var(--primary);
-
-    box-shadow:0 0 0 4px rgba(37,99,235,.12);
-
+  box-shadow:
+    0 0 0 4px rgba(37,99,235,.11),
+    0 6px 14px rgba(15,23,42,.05);
 }
 
-.search-btn{
+.search-btn {
+  background:
+    linear-gradient(
+      135deg,
+      #2563eb,
+      #4f46e5
+    );
 
-    background:var(--primary);
+  color: white;
 
-    color:white;
+  border: none;
 
-    border:none;
+  padding: 13px 18px;
 
-    padding:13px 18px;
+  border-radius: 14px;
 
-    border-radius:14px;
+  cursor: pointer;
 
-    cursor:pointer;
+  font-weight: 700;
 
-    transition:.25s;
+  box-shadow:
+    0 6px 14px rgba(37,99,235,.18);
 
+  transition:
+    transform .2s ease,
+    box-shadow .2s ease;
 }
 
-.search-btn:hover{
+.search-btn:hover {
+  transform: translateY(-2px);
 
-    background:var(--primary-dark);
-
+  box-shadow:
+    0 10px 20px rgba(37,99,235,.24);
 }
 
-/* =========================
-   USER SECTION
-========================= */
+/* ==========================================
+   RIGHT SIDE / TEAM POSSIBLE PROFILE
+========================================== */
 
-.user-section{
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 
-    display:flex;
+  padding: 8px 12px;
 
-    flex-direction:column;
+  border-radius: 16px;
 
-    align-items:flex-end;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255,255,255,.95),
+      rgba(248,250,252,.95)
+    );
 
+  border:
+    1px solid rgba(100,116,139,.14);
+
+  box-shadow:
+    0 1px 0 rgba(255,255,255,1) inset,
+    0 6px 14px rgba(15,23,42,.055);
+
+  white-space: nowrap;
 }
 
-.user-name{
+.team-possible-logo {
+  width: 48px;
+  height: 48px;
 
-    font-size:18px;
+  object-fit: contain;
 
-    font-weight:700;
+  border-radius: 50%;
 
-    color:#111827;
+  background: #fff;
 
+  box-shadow:
+    0 2px 0 rgba(255,255,255,1) inset,
+    0 7px 14px rgba(15,23,42,.11);
 }
 
-.user-role{
+.user-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 
-    font-size:14px;
-
-    color:var(--primary);
-
-    margin-top:3px;
-
-    font-weight:600;
-
+  white-space: nowrap;
 }
 
-.user-company{
+.user-name {
+  font-size: 16px;
+  font-weight: 800;
 
-    font-size:13px;
+  color: #0f172a;
+}
 
-    color:#6b7280;
+.user-role {
+  font-size: 13px;
 
-    margin-top:2px;
+  color: #2563eb;
 
+  margin-top: 3px;
+
+  font-weight: 700;
+}
+
+.user-company {
+  font-size: 12px;
+
+  color: #64748b;
+
+  margin-top: 2px;
+
+  font-weight: 600;
+}
+
+/* ==========================================
+   RESPONSIVE
+========================================== */
+
+@media (max-width: 1050px) {
+  .header {
+    padding: 0 18px;
+  }
+
+  .search-bar {
+    margin: 0 18px;
+  }
+
+  .brand {
+    min-width: 210px;
+  }
+
+  .mrd-logo {
+    width: 52px;
+    height: 52px;
+  }
+}
+
+@media (max-width: 900px) {
+  .user-profile {
+    padding: 6px 8px;
+  }
+
+  .team-possible-logo {
+    width: 42px;
+    height: 42px;
+  }
+
+  .user-section {
+    display: none;
+  }
+
+  .brand {
+    min-width: auto;
+  }
+}
+
+@media (max-width: 650px) {
+  .header {
+    min-height: 78px;
+    padding: 0 14px;
+  }
+
+  .mrd-logo {
+    width: 46px;
+    height: 46px;
+  }
+
+  .brand h1 {
+    font-size: 25px;
+  }
+
+  .brand p {
+    font-size: 11px;
+  }
+
+  .search-bar {
+    display: none;
+  }
+
+  .team-possible-logo {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+/* ---------------------------------------------------------
+   MR.D GLOBAL SEARCH
+   --------------------------------------------------------- */
+
+.mrd-global-search-results{
+  position:absolute;
+  top:calc(100% + 10px);
+  left:0;
+
+  width:100%;
+  min-width:390px;
+  max-height:430px;
+
+  overflow-y:auto;
+
+  z-index:5000;
+
+  padding:8px;
+
+  border-radius:14px;
+
+  background:#ffffff;
+
+  border:1px solid rgba(148,163,184,.22);
+
+  box-shadow:
+    0 18px 45px rgba(15,23,42,.16);
+}
+
+.mrd-global-search-item{
+  width:100%;
+
+  display:flex;
+  align-items:center;
+  gap:12px;
+
+  padding:11px 12px;
+
+  border:none;
+  border-radius:10px;
+
+  background:transparent;
+
+  text-align:left;
+
+  cursor:pointer;
+
+  transition:
+    background .16s ease,
+    transform .16s ease;
+}
+
+.mrd-global-search-item:hover{
+  background:#f1f5f9;
+  transform:translateX(2px);
+}
+
+.mrd-global-search-icon{
+  width:34px;
+  height:34px;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  flex-shrink:0;
+
+  border-radius:9px;
+
+  background:#f8fafc;
+
+  border:1px solid rgba(148,163,184,.18);
+
+  font-size:18px;
+}
+
+.mrd-global-search-text{
+  min-width:0;
+
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+
+.mrd-global-search-text strong{
+  color:#0f172a;
+  font-size:13px;
+}
+
+.mrd-global-search-text small{
+  color:#64748b;
+  font-size:11px;
+
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.mrd-global-search-empty{
+  padding:16px;
+
+  text-align:center;
+
+  color:#64748b;
+
+  font-size:12px;
+}
+
+@media(max-width:700px){
+  .mrd-global-search-results{
+    min-width:300px;
+  }
+}
+
+/* ---------------------------------------------------------
+   MR.D THEME TOGGLE
+   --------------------------------------------------------- */
+
+.theme-toggle-btn{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+
+  min-width:82px;
+  height:42px;
+
+  margin-left:auto;
+  margin-right:14px;
+
+  padding:0 12px;
+
+  border:1px solid #dbe3ef;
+  border-radius:12px;
+
+  background:#ffffff;
+  color:#1e293b;
+
+  font-weight:700;
+  font-size:12px;
+
+  cursor:pointer;
+
+  box-shadow:
+    0 4px 12px
+    rgba(15,23,42,.08);
+
+  transition:
+    background .2s ease,
+    color .2s ease,
+    border-color .2s ease,
+    transform .2s ease;
+}
+
+.theme-toggle-btn:hover{
+  transform:translateY(-1px);
+}
+
+.theme-toggle-icon{
+  font-size:17px;
+}
+
+.theme-toggle-label{
+  white-space:nowrap;
+}
+
+@media(max-width:850px){
+  .theme-toggle-label{
+    display:none;
+  }
+
+  .theme-toggle-btn{
+    min-width:42px;
+    width:42px;
+    padding:0;
+  }
 }

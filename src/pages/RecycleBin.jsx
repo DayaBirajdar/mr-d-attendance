@@ -1,9 +1,39 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { logActivity } from "../lib/activityLog";
 import "../styles/RecycleBin.css";
 
 function RecycleBin() {
   const [items, setItems] = useState([]);
+
+  function getActivityModule(table) {
+    const modules = {
+      inventory: "Inventory",
+      visitors: "Visitors",
+      expenses: "Expenses",
+      events: "Events",
+      renewals: "Renewals",
+      vendors: "Vendors",
+      documents: "Documents",
+      employees: "Employees",
+      attendance: "Attendance",
+    };
+
+    return modules[table] || "Recycle Bin";
+  }
+
+  function getActivityTitle(item) {
+    const asset = item?.data || {};
+
+    return (
+      asset.name ||
+      asset.title ||
+      asset.company ||
+      asset.expense_name ||
+      asset.visitor_name ||
+      `Record ${item?.original_id || ""}`.trim()
+    );
+  }
 
   useEffect(() => {
     loadRecycleBin();
@@ -24,40 +54,67 @@ function RecycleBin() {
   }
 
   async function restoreItem(item) {
-  const asset = { ...item.data };
+    const asset = { ...item.data };
 
-  delete asset.id;
-  delete asset.created_at;
+    // Remove old database-generated values before restoring
+    delete asset.id;
+    delete asset.created_at;
 
-  const { error: insertError } = await supabase
-    .from(item.original_table)
-    .insert([asset]);
+    const { error: insertError } = await supabase
+      .from(item.original_table)
+      .insert([asset]);
 
-  if (insertError) {
-    console.error(insertError);
-    alert(JSON.stringify(insertError, null, 2));
-    return;
-  }
+    if (insertError) {
+      console.error(insertError);
+      alert(JSON.stringify(insertError, null, 2));
+      return;
+    }
 
-  const { error: deleteError } = await supabase
-    .from("recycle_bin")
-    .delete()
-    .eq("id", item.id);
-
-  if (deleteError) {
-    console.error(deleteError);
-  }
-
-  loadRecycleBin();
-}
-
-  async function deleteForever(id) {
-    if (!window.confirm("Delete permanently?")) return;
-
-    await supabase
+    const { error: deleteError } = await supabase
       .from("recycle_bin")
       .delete()
-      .eq("id", id);
+      .eq("id", item.id);
+
+    if (deleteError) {
+      console.error(deleteError);
+      alert(JSON.stringify(deleteError, null, 2));
+      return;
+    }
+
+    await logActivity({
+      module: getActivityModule(
+        item.original_table
+      ),
+      action: "Restored",
+      title: getActivityTitle(item),
+      details: "Restored from Recycle Bin",
+    });
+
+    loadRecycleBin();
+  }
+
+  async function deleteForever(item) {
+    if (!window.confirm("Delete permanently?")) return;
+
+    const { error } = await supabase
+      .from("recycle_bin")
+      .delete()
+      .eq("id", item.id);
+
+    if (error) {
+      console.error(error);
+      alert(JSON.stringify(error, null, 2));
+      return;
+    }
+
+    await logActivity({
+      module: getActivityModule(
+        item.original_table
+      ),
+      action: "Deleted Forever",
+      title: getActivityTitle(item),
+      details: "Permanently deleted from Recycle Bin",
+    });
 
     loadRecycleBin();
   }
@@ -89,23 +146,88 @@ function RecycleBin() {
             </tr>
           ) : (
             items.map((item) => {
-              const asset = item.data;
-              console.log(item);
-console.log(asset);
-              console.log(asset);
+              const asset = item.data || {};
+
+              // Support Events as well as existing Inventory records
+              const isEvent = item.original_table === "events";
+
+              const displayId =
+                asset.id ?? item.original_id ?? item.id;
+
+              const isVendor =
+  item.original_table === "vendors";
+  const isExpense =
+  item.original_table === "expenses";
+  const isVisitor =
+  item.original_table === "visitors";
+
+const displayName =
+  asset.name ??
+  asset.title ??
+  asset.company ??
+  asset.expense_name ??
+  asset.visitor_name ??
+  "-";
+
+const displayCategory =
+  asset.category ??
+  (isEvent
+    ? "Event"
+    : isVendor
+    ? "Vendor"
+    : isExpense
+    ? "Expense"
+    : isVisitor
+    ? "Visitor"
+    : "-");
+
+const displayLocation =
+  asset.location ??
+  asset.venue ??
+  asset.address ??
+  asset.company ??
+  "-";
+
+const displayAssignedTo =
+  asset.assigned_to ??
+  asset.owner ??
+  asset.contact_person ??
+  asset.vendor ??
+  asset.person_to_meet ??
+  "-";
+
+const displayStatus =
+  asset.status ??
+  "-";
 
               return (
                 <tr key={item.id}>
-                  <td>{asset?.id}</td>
-                  <td>{asset?.name}</td>
-                  <td>{asset?.category}</td>
-                  <td>{asset?.location}</td>
-                  <td>{asset?.assigned_to}</td>
-                  <td>{asset?.status}</td>
-                  <td>{new Date(item.deleted_at).toLocaleString()}</td>
+                  <td>{displayId}</td>
+
+                  <td>{displayName}</td>
+
+                  <td>{displayCategory}</td>
+
+                  <td>{displayLocation}</td>
+
+                  <td>{displayAssignedTo}</td>
+
+                  <td>{displayStatus}</td>
 
                   <td>
-                    <button onClick={() => restoreItem(item)}>
+                    {item.deleted_at
+                      ? new Date(
+                          item.deleted_at
+                        ).toLocaleString()
+                      : "-"}
+                  </td>
+
+                  <td>
+                    <button
+                      onClick={() =>
+                        restoreItem(item)
+                      }
+                    >
                       Restore
                     </button>
 
@@ -115,7 +237,9 @@ console.log(asset);
                         background: "red",
                         color: "white",
                       }}
-                      onClick={() => deleteForever(item.id)}
+                      onClick={() =>
+                        deleteForever(item)
+                      }
                     >
                       Delete Forever
                     </button>

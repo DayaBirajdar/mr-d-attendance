@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import "../styles/Inventory.css";
 import { supabase } from "../lib/supabase";
+import { logActivity } from "../lib/activityLog";
 
 import InventoryToolbar from "../components/inventory/InventoryToolbar";
 import InventoryTable from "../components/inventory/InventoryTable";
@@ -12,9 +14,79 @@ function Inventory() {
   const [showModal, setShowModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
 
+  const [searchParams, setSearchParams] =
+    useSearchParams();
+
+  const focusedInventoryId =
+    searchParams.get("focus")
+      ? Number(searchParams.get("focus"))
+      : null;
+
   useEffect(() => {
     loadInventory();
   }, []);
+
+  useEffect(() => {
+    if (
+      searchParams.get("action") ===
+      "add"
+    ) {
+      setSelectedItem(null);
+      setShowModal(true);
+
+      setSearchParams(
+        {},
+        {
+          replace: true,
+        }
+      );
+    }
+  }, [
+    searchParams,
+    setSearchParams,
+  ]);
+
+  useEffect(() => {
+    if (
+      !focusedInventoryId ||
+      items.length === 0
+    ) {
+      return;
+    }
+
+    const focusedItem =
+      items.find(
+        (item) =>
+          Number(item.id) ===
+          Number(focusedInventoryId)
+      );
+
+    if (!focusedItem) {
+      return;
+    }
+
+    setSearch(
+      focusedItem.name || ""
+    );
+
+    setTimeout(() => {
+      const row =
+        document.querySelector(
+          `[data-inventory-id="${focusedInventoryId}"]`
+        );
+
+      if (row) {
+        row.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+    }, 150);
+  }, [
+    focusedInventoryId,
+    items,
+  ]);
+
 
   async function loadInventory() {
     const { data, error } = await supabase
@@ -49,6 +121,19 @@ function Inventory() {
       alert(JSON.stringify(error, null, 2));
       return;
     }
+
+    await logActivity({
+      module: "Inventory",
+      action: selectedItem ? "Updated" : "Added",
+      title: item.name || "Inventory Item",
+      details: [
+        item.category && `Category: ${item.category}`,
+        item.location && `Location: ${item.location}`,
+        item.status && `Status: ${item.status}`,
+      ]
+        .filter(Boolean)
+        .join(" · "),
+    });
 
     setShowModal(false);
     setSelectedItem(null);
@@ -104,6 +189,19 @@ function Inventory() {
       return;
     }
 
+    await logActivity({
+      module: "Inventory",
+      action: "Moved to Recycle Bin",
+      title: item.name || "Inventory Item",
+      details: [
+        item.category && `Category: ${item.category}`,
+        item.location && `Location: ${item.location}`,
+        item.status && `Status: ${item.status}`,
+      ]
+        .filter(Boolean)
+        .join(" · "),
+    });
+
     loadInventory();
   }
 
@@ -112,9 +210,17 @@ function Inventory() {
     setShowModal(true);
   }
 
-  const filteredInventory = items.filter((item) =>
-    item.name?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredInventory = focusedInventoryId
+    ? items.filter(
+        (item) =>
+          Number(item.id) ===
+          Number(focusedInventoryId)
+      )
+    : items.filter((item) =>
+        item.name
+          ?.toLowerCase()
+          .includes(search.toLowerCase())
+      );
 
   function getStatusClass(status) {
     switch (status) {
@@ -158,6 +264,7 @@ function Inventory() {
 
       <InventoryTable
         items={filteredInventory}
+        focusedInventoryId={focusedInventoryId}
         getStatusClass={getStatusClass}
         onEdit={handleEdit}
         onDelete={handleDelete}

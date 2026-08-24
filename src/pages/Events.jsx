@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import { logActivity } from "../lib/activityLog";
 
 import AddEventModal from "../components/events/AddEventModal";
 
@@ -9,9 +11,75 @@ function Events() {
   const [showModal, setShowModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
 
+  const [searchParams, setSearchParams] =
+    useSearchParams();
+
+  const focusedEventId =
+    searchParams.get("focus")
+      ? Number(searchParams.get("focus"))
+      : null;
+
+
   useEffect(() => {
     loadEvents();
   }, []);
+
+  useEffect(() => {
+    if (searchParams.get("action") === "add") {
+      setSelectedEvent(null);
+      setShowModal(true);
+
+      setSearchParams(
+        {},
+        { replace: true }
+      );
+    }
+  }, [
+    searchParams,
+    setSearchParams,
+  ]);
+
+  useEffect(() => {
+    if (
+      !focusedEventId ||
+      events.length === 0
+    ) {
+      return;
+    }
+
+    const focusedEvent =
+      events.find(
+        (event) =>
+          Number(event.id) ===
+          Number(focusedEventId)
+      );
+
+    if (!focusedEvent) {
+      return;
+    }
+
+    setSearch(
+      focusedEvent.title || ""
+    );
+
+    setTimeout(() => {
+      const row =
+        document.querySelector(
+          `[data-event-id="${focusedEventId}"]`
+        );
+
+      if (row) {
+        row.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+    }, 150);
+  }, [
+    focusedEventId,
+    events,
+  ]);
+
 
   async function loadEvents() {
     const { data, error } = await supabase
@@ -47,6 +115,18 @@ function Events() {
       return;
     }
 
+    await logActivity({
+      module: "Events",
+      action: selectedEvent ? "Updated" : "Added",
+      title: event.title || "Event",
+      details: [
+        event.event_date && `Date: ${event.event_date}`,
+        event.location && `Location: ${event.location}`,
+      ]
+        .filter(Boolean)
+        .join(" · "),
+    });
+
     setShowModal(false);
     setSelectedEvent(null);
 
@@ -54,36 +134,104 @@ function Events() {
   }
 
   async function handleDelete(id) {
-    const confirmDelete = window.confirm(
-      "Delete this event?"
+  const confirmDelete = window.confirm(
+    "Move this event to Recycle Bin?"
+  );
+
+  if (!confirmDelete) return;
+
+  const eventToDelete = events.find(
+    (event) => event.id === id
+  );
+
+  if (!eventToDelete) {
+    alert("Event not found.");
+    return;
+  }
+
+  const {
+    error: recycleError,
+  } = await supabase
+    .from("recycle_bin")
+    .insert([
+      {
+        original_table: "events",
+        original_id: eventToDelete.id,
+        data: eventToDelete,
+        deleted_by: "Admin",
+        deleted_at: new Date().toISOString(),
+      },
+    ]);
+
+  if (recycleError) {
+    console.error(
+      "Recycle Bin error:",
+      recycleError
     );
 
-    if (!confirmDelete) return;
+    alert(
+      JSON.stringify(
+        recycleError,
+        null,
+        2
+      )
+    );
 
-    const { error } = await supabase
-      .from("events")
-      .delete()
-      .eq("id", id);
-
-    if (error) {
-      console.error(error);
-      alert("Unable to delete event.");
-      return;
-    }
-
-    loadEvents();
+    return;
   }
+
+  const {
+    error: deleteError,
+  } = await supabase
+    .from("events")
+    .delete()
+    .eq("id", id);
+
+  if (deleteError) {
+    console.error(
+      "Event delete error:",
+      deleteError
+    );
+
+    alert(
+      JSON.stringify(
+        deleteError,
+        null,
+        2
+      )
+    );
+
+    return;
+  }
+
+  await logActivity({
+    module: "Events",
+    action: "Moved to Recycle Bin",
+    title: eventToDelete.title || "Event",
+    details: eventToDelete.event_date
+      ? `Date: ${eventToDelete.event_date}`
+      : null,
+  });
+
+  loadEvents();
+}
 
   function handleEdit(event) {
     setSelectedEvent(event);
     setShowModal(true);
   }
 
-  const filteredEvents = events.filter((event) =>
-    event.title
-      ?.toLowerCase()
-      .includes(search.toLowerCase())
-  );
+  const filteredEvents = focusedEventId
+    ? events.filter(
+        (event) =>
+          Number(event.id) ===
+          Number(focusedEventId)
+      )
+    : events.filter((event) =>
+        event.title
+          ?.toLowerCase()
+          .includes(search.toLowerCase())
+      );
 
   return (
     <div className="inventory-page">
@@ -225,7 +373,16 @@ function Events() {
 
             filteredEvents.map((event) => (
 
-              <tr key={event.id}>
+              <tr
+                key={event.id}
+                data-event-id={event.id}
+                className={
+                  Number(event.id) ===
+                  Number(focusedEventId)
+                    ? "event-focus-row"
+                    : ""
+                }
+              >
 
                 <td>{event.id}</td>
 
@@ -233,7 +390,7 @@ function Events() {
 
                 <td>{event.venue}</td>
 
-                <td>{event.organizer}</td>
+                <td>{event.owner}</td>
 
                 <td>{event.event_date}</td>
 

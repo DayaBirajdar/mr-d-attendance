@@ -765,22 +765,40 @@ setMatchMessage(
     }
 
 
-    // Face must match
+    // Face verification rules:
+    // New attendance -> verified selfie required.
+    // Edit attendance -> existing selfie may be retained.
+    // If a new selfie is captured while editing, it must verify.
 
-    if (!faceMatched) {
+    const requiresFaceVerification =
+      !item || Boolean(selfieFile);
 
+    if (
+      requiresFaceVerification &&
+      !faceMatched
+    ) {
       alert(
         "Face verification failed. Please capture the selfie again."
       );
 
       return;
-
     }
 
+
+    console.log("🟢 ATTENDANCE SUBMIT PASSED VALIDATION", {
+      editMode: Boolean(item),
+      employeeId: form.employee_id,
+      faceMatched,
+      hasNewSelfie: Boolean(selfieFile),
+      checkIn: form.check_in,
+      checkOut: form.check_out,
+      status: form.status,
+    });
 
     const result =
       calculateHours();
 
+    console.log("🟡 CALLING ATTENDANCE onSave");
 
     onSave({
 
@@ -1300,7 +1318,7 @@ setMatchMessage(
               className="add-btn"
               disabled={
                 isVerifying ||
-                !faceMatched
+                ((!item || Boolean(selfieFile)) && !faceMatched)
               }
             >
 

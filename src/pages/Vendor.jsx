@@ -57,42 +57,74 @@ function Vendor() {
   }
 
   async function handleDelete(id) {
-    if (!window.confirm("Move this vendor to Recycle Bin?"))
-      return;
+  const confirmDelete = window.confirm(
+    "Move this vendor to Recycle Bin?"
+  );
 
-    const vendor = vendors.find((v) => v.id === id);
+  if (!confirmDelete) return;
 
-    const { error: recycleError } = await supabase
-      .from("recycle_bin")
-      .insert([
-        {
-          original_table: "vendors",
-          original_id: vendor.id,
-          data: vendor,
-          deleted_by: "Admin",
-          deleted_at: new Date().toISOString(),
-        },
-      ]);
+  const vendorToDelete = vendors.find(
+    (vendor) => vendor.id === id
+  );
 
-    if (recycleError) {
-      console.error(recycleError);
-      alert(JSON.stringify(recycleError, null, 2));
-      return;
-    }
-
-    const { error } = await supabase
-      .from("vendors")
-      .delete()
-      .eq("id", id);
-
-    if (error) {
-      console.error(error);
-      alert(JSON.stringify(error, null, 2));
-      return;
-    }
-
-    loadVendors();
+  if (!vendorToDelete) {
+    alert("Vendor not found.");
+    return;
   }
+
+  const { error: recycleError } = await supabase
+    .from("recycle_bin")
+    .insert([
+      {
+        original_table: "vendors",
+        original_id: vendorToDelete.id,
+        data: vendorToDelete,
+        deleted_by: "Admin",
+        deleted_at: new Date().toISOString(),
+      },
+    ]);
+
+  if (recycleError) {
+    console.error(
+      "Recycle Bin error:",
+      recycleError
+    );
+
+    alert(
+      JSON.stringify(
+        recycleError,
+        null,
+        2
+      )
+    );
+
+    return;
+  }
+
+  const { error: deleteError } = await supabase
+    .from("vendors")
+    .delete()
+    .eq("id", id);
+
+  if (deleteError) {
+    console.error(
+      "Vendor delete error:",
+      deleteError
+    );
+
+    alert(
+      JSON.stringify(
+        deleteError,
+        null,
+        2
+      )
+    );
+
+    return;
+  }
+
+  loadVendors();
+}
 
   function handleEdit(vendor) {
     setSelectedVendor(vendor);

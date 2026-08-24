@@ -7,8 +7,33 @@ function RecentActivity({ activity }) {
       </div>
 
       <div className="activity-info">
-        <h4>{activity.title}</h4>
-        <p>{activity.time}</p>
+        <div className="activity-title-row">
+          <strong>{activity.module}</strong>
+
+          <span className="activity-action">
+            {activity.action}
+          </span>
+        </div>
+
+        <div className="activity-name">
+          {activity.title}
+        </div>
+
+        {activity.details && (
+          <div className="activity-details">
+            {activity.details}
+          </div>
+        )}
+      </div>
+
+      <div className="activity-meta">
+        <div className="activity-actor">
+          👤 {activity.actor}
+        </div>
+
+        <div className="activity-time">
+          {activity.time}
+        </div>
       </div>
 
     </div>

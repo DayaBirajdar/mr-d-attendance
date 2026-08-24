@@ -1,5 +1,6 @@
 function ExpenseTable({
   expenses,
+  focusedExpenseId,
   onEdit,
   onDelete,
 }) {
@@ -29,7 +30,16 @@ function ExpenseTable({
           </tr>
         ) : (
           expenses.map((expense) => (
-            <tr key={expense.id}>
+            <tr
+              key={expense.id}
+              data-expense-id={expense.id}
+              className={
+                Number(expense.id) ===
+                Number(focusedExpenseId)
+                  ? "expense-focus-row"
+                  : ""
+              }
+            >
               <td>{expense.id}</td>
 
               <td>{expense.expense_name}</td>

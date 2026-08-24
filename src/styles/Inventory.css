@@ -165,3 +165,189 @@
   color: #dc2626;
 
 }
+/* ---------------------------------------------------------
+   DOCUMENT ACTION BUTTONS
+   --------------------------------------------------------- */
+
+.document-view-btn,
+.document-download-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+
+  padding:7px 11px;
+  margin-left:8px;
+
+  border-radius:7px;
+
+  font-size:12px;
+  font-weight:700;
+
+  text-decoration:none;
+
+  cursor:pointer;
+
+  transition:
+    transform .18s ease,
+    box-shadow .18s ease;
+}
+
+.document-view-btn{
+  background:#2563eb;
+  color:#ffffff;
+}
+
+.document-download-btn{
+  background:#0f766e;
+  color:#ffffff;
+}
+
+.document-view-btn:hover,
+.document-download-btn:hover{
+  transform:translateY(-1px);
+  box-shadow:0 5px 12px rgba(15,23,42,.14);
+}
+
+/* ---------------------------------------------------------
+   GLOBAL SEARCH — FOCUSED EMPLOYEE
+   --------------------------------------------------------- */
+
+.employee-focus-row{
+  background:#eff6ff !important;
+
+  box-shadow:
+    inset 4px 0 0 #2563eb;
+
+  animation:
+    employeeFocusPulse 1.2s ease;
+}
+
+@keyframes employeeFocusPulse{
+  0%{
+    background:#dbeafe;
+  }
+
+  100%{
+    background:#eff6ff;
+  }
+}
+
+/* ---------------------------------------------------------
+   GLOBAL SEARCH — FOCUSED VENDOR
+   --------------------------------------------------------- */
+
+.vendor-focus-row{
+  background:#eff6ff !important;
+  box-shadow:inset 4px 0 0 #2563eb;
+  animation:vendorFocusPulse 1.2s ease;
+}
+
+@keyframes vendorFocusPulse{
+  0%{
+    background:#dbeafe;
+  }
+
+  100%{
+    background:#eff6ff;
+  }
+}
+
+/* ---------------------------------------------------------
+   GLOBAL SEARCH — FOCUSED DOCUMENT
+   --------------------------------------------------------- */
+
+.document-focus-row{
+  background:#eff6ff !important;
+  box-shadow:inset 4px 0 0 #2563eb;
+  animation:documentFocusPulse 1.2s ease;
+}
+
+@keyframes documentFocusPulse{
+  0%{
+    background:#dbeafe;
+  }
+
+  100%{
+    background:#eff6ff;
+  }
+}
+
+/* ---------------------------------------------------------
+   GLOBAL SEARCH — FOCUSED VISITOR
+   --------------------------------------------------------- */
+
+.visitor-focus-row{
+  background:#eff6ff !important;
+  box-shadow:inset 4px 0 0 #2563eb;
+  animation:visitorFocusPulse 1.2s ease;
+}
+
+@keyframes visitorFocusPulse{
+  0%{
+    background:#dbeafe;
+  }
+
+  100%{
+    background:#eff6ff;
+  }
+}
+
+/* ---------------------------------------------------------
+   GLOBAL SEARCH — FOCUSED EXPENSE
+   --------------------------------------------------------- */
+
+.expense-focus-row{
+  background:#eff6ff !important;
+  box-shadow:inset 4px 0 0 #2563eb;
+  animation:expenseFocusPulse 1.2s ease;
+}
+
+@keyframes expenseFocusPulse{
+  0%{
+    background:#dbeafe;
+  }
+
+  100%{
+    background:#eff6ff;
+  }
+}
+
+/* ---------------------------------------------------------
+   GLOBAL SEARCH — FOCUSED EVENT
+   --------------------------------------------------------- */
+
+.event-focus-row{
+  background:#eff6ff !important;
+  box-shadow:inset 4px 0 0 #2563eb;
+  animation:eventFocusPulse 1.2s ease;
+}
+
+@keyframes eventFocusPulse{
+  0%{
+    background:#dbeafe;
+  }
+
+  100%{
+    background:#eff6ff;
+  }
+}
+
+/* ---------------------------------------------------------
+   GLOBAL SEARCH — FOCUSED INVENTORY
+   --------------------------------------------------------- */
+
+.inventory-focus-row{
+  background:#eff6ff !important;
+  box-shadow:inset 4px 0 0 #2563eb;
+  animation:inventoryFocusPulse 1.2s ease;
+}
+
+@keyframes inventoryFocusPulse{
+  0%{
+    background:#dbeafe;
+  }
+
+  100%{
+    background:#eff6ff;
+  }
+}

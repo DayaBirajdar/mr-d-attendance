@@ -12,6 +12,8 @@ import {
   loadFaceModels,
 } from "../utils/faceRecognition";
 
+import Footer from "../components/inventory/layout/Footer";
+
 
 function EmployeeAttendance() {
 
@@ -46,6 +48,89 @@ function EmployeeAttendance() {
 
   const [selfiePreview, setSelfiePreview] =
     useState("");
+
+  // Attendance settings
+  const [officeStartTime, setOfficeStartTime] =
+    useState("10:00");
+
+  const [
+    gracePeriodMinutes,
+    setGracePeriodMinutes,
+  ] = useState(15);
+
+
+  // ---------------------------------------------------------
+  // LOAD ATTENDANCE SETTINGS
+  // ---------------------------------------------------------
+
+  async function loadAttendanceSettings() {
+
+    const {
+      data,
+      error,
+    } = await supabase
+      .from("attendance_settings")
+      .select(
+        "office_start_time, grace_period_minutes"
+      )
+      .order(
+        "id",
+        {
+          ascending: true,
+        }
+      )
+      .limit(1)
+      .maybeSingle();
+
+
+    if (error) {
+
+      console.error(
+        "Attendance settings load error:",
+        error
+      );
+
+      return {
+        officeStartTime:
+          "10:00",
+
+        gracePeriodMinutes:
+          15,
+      };
+    }
+
+
+    const startTime =
+      data?.office_start_time
+        ?.slice(0, 5) ||
+      "10:00";
+
+
+    const graceMinutes =
+      Number(
+        data?.grace_period_minutes ??
+          15
+      );
+
+
+    setOfficeStartTime(
+      startTime
+    );
+
+    setGracePeriodMinutes(
+      graceMinutes
+    );
+
+
+    return {
+      officeStartTime:
+        startTime,
+
+      gracePeriodMinutes:
+        graceMinutes,
+    };
+
+  }
 
 
   // ---------------------------------------------------------
@@ -110,9 +195,12 @@ function EmployeeAttendance() {
     const cleanEmployeeId =
       employeeId.trim();
 
+
     if (!cleanEmployeeId) {
 
-      setMessageType("error");
+      setMessageType(
+        "error"
+      );
 
       setMessage(
         "Please enter your Employee ID."
@@ -122,7 +210,9 @@ function EmployeeAttendance() {
     }
 
 
-    setLoadingEmployee(true);
+    setLoadingEmployee(
+      true
+    );
 
     setMessage("");
 
@@ -165,7 +255,9 @@ function EmployeeAttendance() {
 
       if (!data) {
 
-        setMessageType("error");
+        setMessageType(
+          "error"
+        );
 
         setMessage(
           "Employee ID not found."
@@ -175,9 +267,13 @@ function EmployeeAttendance() {
       }
 
 
-      if (!data.photo_url) {
+      if (
+        !data.photo_url
+      ) {
 
-        setMessageType("error");
+        setMessageType(
+          "error"
+        );
 
         setMessage(
           "Profile photo is not available. Please contact Admin."
@@ -187,9 +283,17 @@ function EmployeeAttendance() {
       }
 
 
-      setEmployee(data);
+      // Load office timing + grace period
+      await loadAttendanceSettings();
 
-      setMessageType("success");
+
+      setEmployee(
+        data
+      );
+
+      setMessageType(
+        "success"
+      );
 
       setMessage(
         `Welcome ${data.full_name}`
@@ -203,7 +307,9 @@ function EmployeeAttendance() {
         error
       );
 
-      setMessageType("error");
+      setMessageType(
+        "error"
+      );
 
       setMessage(
         "Unable to verify Employee ID."
@@ -211,7 +317,9 @@ function EmployeeAttendance() {
 
     } finally {
 
-      setLoadingEmployee(false);
+      setLoadingEmployee(
+        false
+      );
 
     }
 
@@ -226,7 +334,9 @@ function EmployeeAttendance() {
 
     if (!employee) {
 
-      setMessageType("error");
+      setMessageType(
+        "error"
+      );
 
       setMessage(
         "Please verify your Employee ID first."
@@ -238,11 +348,15 @@ function EmployeeAttendance() {
 
     setCameraError("");
 
-    setCameraReady(false);
+    setCameraReady(
+      false
+    );
 
     setMessage("");
 
-    setShowCamera(true);
+    setShowCamera(
+      true
+    );
 
   }
 
@@ -253,7 +367,9 @@ function EmployeeAttendance() {
 
   function handleCameraReady() {
 
-    setCameraReady(true);
+    setCameraReady(
+      true
+    );
 
     setCameraError("");
 
@@ -264,14 +380,18 @@ function EmployeeAttendance() {
   // CAMERA ERROR
   // ---------------------------------------------------------
 
-  function handleCameraError(error) {
+  function handleCameraError(
+    error
+  ) {
 
     console.error(
       "Camera error:",
       error
     );
 
-    setCameraReady(false);
+    setCameraReady(
+      false
+    );
 
     setCameraError(
       "Unable to access camera. Please allow camera permission."
@@ -298,20 +418,27 @@ function EmployeeAttendance() {
 
 
     const start =
-      new Date(checkIn);
+      new Date(
+        checkIn
+      );
 
     const end =
-      new Date(checkOut);
+      new Date(
+        checkOut
+      );
 
 
     let seconds =
       Math.floor(
-        (end - start) / 1000
+        (end - start) /
+          1000
       );
 
 
     if (
-      !Number.isFinite(seconds) ||
+      !Number.isFinite(
+        seconds
+      ) ||
       seconds < 0
     ) {
       return "";
@@ -326,11 +453,13 @@ function EmployeeAttendance() {
 
     const minutes =
       Math.floor(
-        (seconds % 3600) / 60
+        (seconds % 3600) /
+          60
       );
 
 
     return `${hours}h ${minutes}m`;
+
   }
 
 
@@ -339,7 +468,11 @@ function EmployeeAttendance() {
   // ---------------------------------------------------------
 
   function calculateLateMinutes(
-    checkInTime
+    checkInTime,
+    startTime =
+      officeStartTime,
+    graceMinutes =
+      gracePeriodMinutes
   ) {
 
     if (!checkInTime) {
@@ -348,28 +481,50 @@ function EmployeeAttendance() {
 
 
     const [
-      hour,
-      minute,
+      actualHour,
+      actualMinute,
     ] =
       checkInTime
         .split(":")
         .map(Number);
 
 
+    const [
+      startHour,
+      startMinute,
+    ] =
+      (
+        startTime ||
+        "10:00"
+      )
+        .split(":")
+        .map(Number);
+
+
     const actualMinutes =
-      hour * 60 +
-      minute;
+      actualHour * 60 +
+      actualMinute;
 
 
-    const officeStart =
-      9 * 60 + 30;
+    const officeStartMinutes =
+      startHour * 60 +
+      startMinute;
+
+
+    const lateThreshold =
+      officeStartMinutes +
+      Number(
+        graceMinutes ||
+          0
+      );
 
 
     return Math.max(
       0,
       actualMinutes -
-        officeStart
+        lateThreshold
     );
+
   }
 
 
@@ -388,12 +543,15 @@ function EmployeeAttendance() {
 
 
     const imageSrc =
-      webcamRef.current.getScreenshot();
+      webcamRef.current
+        .getScreenshot();
 
 
     if (!imageSrc) {
 
-      setMessageType("error");
+      setMessageType(
+        "error"
+      );
 
       setMessage(
         "Unable to capture selfie."
@@ -407,11 +565,17 @@ function EmployeeAttendance() {
       imageSrc
     );
 
-    setShowCamera(false);
+    setShowCamera(
+      false
+    );
 
-    setVerifying(true);
+    setVerifying(
+      true
+    );
 
-    setMessageType("info");
+    setMessageType(
+      "info"
+    );
 
     setMessage(
       "Verifying your face..."
@@ -421,17 +585,22 @@ function EmployeeAttendance() {
     try {
 
       const response =
-        await fetch(imageSrc);
+        await fetch(
+          imageSrc
+        );
+
 
       const blob =
         await response.blob();
+
 
       const file =
         new File(
           [blob],
           `attendance-${Date.now()}.jpg`,
           {
-            type: "image/jpeg",
+            type:
+              "image/jpeg",
           }
         );
 
@@ -448,15 +617,19 @@ function EmployeeAttendance() {
 
       if (
         !result ||
-        result.success !== true ||
-        result.match !== true
+        result.success !==
+          true ||
+        result.match !==
+          true
       ) {
 
-        setMessageType("error");
+        setMessageType(
+          "error"
+        );
 
         setMessage(
           result?.message ||
-          "Face verification failed."
+            "Face verification failed."
         );
 
         return;
@@ -475,16 +648,20 @@ function EmployeeAttendance() {
         error
       );
 
-      setMessageType("error");
+      setMessageType(
+        "error"
+      );
 
       setMessage(
         error?.message ||
-        "Attendance could not be marked."
+          "Attendance could not be marked."
       );
 
     } finally {
 
-      setVerifying(false);
+      setVerifying(
+        false
+      );
 
     }
 
@@ -500,7 +677,8 @@ function EmployeeAttendance() {
   ) {
 
     const extension =
-      file.type === "image/png"
+      file.type ===
+      "image/png"
         ? "png"
         : "jpg";
 
@@ -511,21 +689,26 @@ function EmployeeAttendance() {
 
     const {
       error,
-    } = await supabase.storage
-      .from(
-        "attendance-selfies"
-      )
-      .upload(
-        fileName,
-        file,
-        {
-          cacheControl: "3600",
-          upsert: false,
-          contentType:
-            file.type ||
-            "image/jpeg",
-        }
-      );
+    } =
+      await supabase.storage
+        .from(
+          "attendance-selfies"
+        )
+        .upload(
+          fileName,
+          file,
+          {
+            cacheControl:
+              "3600",
+
+            upsert:
+              false,
+
+            contentType:
+              file.type ||
+              "image/jpeg",
+          }
+        );
 
 
     if (error) {
@@ -535,13 +718,14 @@ function EmployeeAttendance() {
 
     const {
       data,
-    } = supabase.storage
-      .from(
-        "attendance-selfies"
-      )
-      .getPublicUrl(
-        fileName
-      );
+    } =
+      supabase.storage
+        .from(
+          "attendance-selfies"
+        )
+        .getPublicUrl(
+          fileName
+        );
 
 
     return (
@@ -560,40 +744,123 @@ function EmployeeAttendance() {
     selfieFile
   ) {
 
-    const today =
-      getLocalDate();
+    // Always read latest attendance settings
+    // before calculating late minutes.
+    const attendanceSettings =
+      await loadAttendanceSettings();
 
-    const time =
-      getCurrentTime();
-
-
-    // Check today's attendance
 
     const {
-      data: todayAttendance,
-      error: attendanceError,
-    } = await supabase
-      .from("attendance")
-      .select("*")
-      .eq(
-        "employee_id",
-        employee.id
-      )
-      .eq(
-        "attendance_date",
-        today
-      )
-      .order(
-        "id",
+      data:
+        serverTime,
+
+      error:
+        serverTimeError,
+    } =
+      await supabase.rpc(
+        "get_server_time"
+      );
+
+
+    if (
+      serverTimeError
+    ) {
+      throw serverTimeError;
+    }
+
+
+    const serverDate =
+      new Date(
+        serverTime
+      );
+
+
+    const indiaDateParts =
+      new Intl.DateTimeFormat(
+        "en-CA",
         {
-          ascending: false,
+          timeZone:
+            "Asia/Kolkata",
+
+          year:
+            "numeric",
+
+          month:
+            "2-digit",
+
+          day:
+            "2-digit",
         }
       )
-      .limit(1)
-      .maybeSingle();
+        .format(
+          serverDate
+        )
+        .split("-");
 
 
-    if (attendanceError) {
+    const today =
+      `${indiaDateParts[0]}-${indiaDateParts[1]}-${indiaDateParts[2]}`;
+
+
+    const time =
+      new Intl.DateTimeFormat(
+        "en-GB",
+        {
+          timeZone:
+            "Asia/Kolkata",
+
+          hour:
+            "2-digit",
+
+          minute:
+            "2-digit",
+
+          hour12:
+            false,
+        }
+      ).format(
+        serverDate
+      );
+
+
+    // -----------------------------------------------------
+    // CHECK TODAY'S ATTENDANCE
+    // -----------------------------------------------------
+
+    const {
+      data:
+        todayAttendance,
+
+      error:
+        attendanceError,
+    } =
+      await supabase
+        .from(
+          "attendance"
+        )
+        .select("*")
+        .eq(
+          "employee_id",
+          employee.id
+        )
+        .eq(
+          "attendance_date",
+          today
+        )
+        .order(
+          "id",
+          {
+            ascending:
+              false,
+          }
+        )
+        .limit(1)
+        .maybeSingle();
+
+
+    if (
+      attendanceError
+    ) {
       throw attendanceError;
     }
 
@@ -602,7 +869,9 @@ function EmployeeAttendance() {
     // CHECK IN
     // -----------------------------------------------------
 
-    if (!todayAttendance) {
+    if (
+      !todayAttendance
+    ) {
 
       const selfieUrl =
         await uploadSelfie(
@@ -611,53 +880,57 @@ function EmployeeAttendance() {
 
 
       const checkIn =
-        createDateTime(
-          today,
-          time
-        );
+        serverTime;
 
 
       const lateMinutes =
         calculateLateMinutes(
-          time
+          time,
+          attendanceSettings
+            .officeStartTime,
+          attendanceSettings
+            .gracePeriodMinutes
         );
 
 
       const {
         error,
-      } = await supabase
-        .from("attendance")
-        .insert({
-          employee_id:
-            employee.id,
+      } =
+        await supabase
+          .from(
+            "attendance"
+          )
+          .insert({
+            employee_id:
+              employee.id,
 
-          attendance_date:
-            today,
+            attendance_date:
+              today,
 
-          check_in:
-            checkIn,
+            check_in:
+              checkIn,
 
-          check_out:
-            null,
+            check_out:
+              null,
 
-          working_hours:
-            "",
+            working_hours:
+              "",
 
-          late_minutes:
-            lateMinutes,
+            late_minutes:
+              lateMinutes,
 
-          attendance_status:
-            "Present",
+            attendance_status:
+              "Present",
 
-          status:
-            "Present",
+            status:
+              "Present",
 
-          remarks:
-            "Employee self check-in",
+            remarks:
+              "Employee self check-in",
 
-          selfie_url:
-            selfieUrl,
-        });
+            selfie_url:
+              selfieUrl,
+          });
 
 
       if (error) {
@@ -669,11 +942,27 @@ function EmployeeAttendance() {
         "success"
       );
 
-      setMessage(
-        `✅ Check-In successful at ${time}`
-      );
+
+      if (
+        lateMinutes >
+        0
+      ) {
+
+        setMessage(
+          `✅ Check-In successful at ${time}. Late by ${lateMinutes} minute${lateMinutes === 1 ? "" : "s"}.`
+        );
+
+      } else {
+
+        setMessage(
+          `✅ Check-In successful at ${time}. On Time.`
+        );
+
+      }
+
 
       return;
+
     }
 
 
@@ -682,12 +971,32 @@ function EmployeeAttendance() {
     // -----------------------------------------------------
 
     if (
-      todayAttendance.check_out
+      todayAttendance
+        .check_out
     ) {
 
       const savedCheckout =
-        todayAttendance.check_out
-          .slice(11, 16);
+        new Intl.DateTimeFormat(
+          "en-GB",
+          {
+            timeZone:
+              "Asia/Kolkata",
+
+            hour:
+              "2-digit",
+
+            minute:
+              "2-digit",
+
+            hour12:
+              false,
+          }
+        ).format(
+          new Date(
+            todayAttendance
+              .check_out
+          )
+        );
 
 
       setMessageType(
@@ -699,6 +1008,7 @@ function EmployeeAttendance() {
       );
 
       return;
+
     }
 
 
@@ -707,8 +1017,10 @@ function EmployeeAttendance() {
     // -----------------------------------------------------
 
     if (
-      todayAttendance.check_in &&
-      !todayAttendance.check_out
+      todayAttendance
+        .check_in &&
+      !todayAttendance
+        .check_out
     ) {
 
       const selfieUrl =
@@ -718,40 +1030,42 @@ function EmployeeAttendance() {
 
 
       const checkOut =
-        createDateTime(
-          today,
-          time
-        );
+        serverTime;
 
 
       const workingHours =
         calculateWorkingHours(
-          todayAttendance.check_in,
+          todayAttendance
+            .check_in,
           checkOut
         );
 
 
       const {
         error,
-      } = await supabase
-        .from("attendance")
-        .update({
-          check_out:
-            checkOut,
+      } =
+        await supabase
+          .from(
+            "attendance"
+          )
+          .update({
+            check_out:
+              checkOut,
 
-          working_hours:
-            workingHours,
+            working_hours:
+              workingHours,
 
-          remarks:
-            "Employee self check-out",
+            remarks:
+              "Employee self check-out",
 
-          selfie_url:
-            selfieUrl,
-        })
-        .eq(
-          "id",
-          todayAttendance.id
-        );
+            selfie_url:
+              selfieUrl,
+          })
+          .eq(
+            "id",
+            todayAttendance
+              .id
+          );
 
 
       if (error) {
@@ -778,15 +1092,21 @@ function EmployeeAttendance() {
 
   function resetEmployee() {
 
-    setEmployee(null);
+    setEmployee(
+      null
+    );
 
     setEmployeeId("");
 
     setSelfiePreview("");
 
-    setShowCamera(false);
+    setShowCamera(
+      false
+    );
 
-    setCameraReady(false);
+    setCameraReady(
+      false
+    );
 
     setCameraError("");
 
@@ -803,35 +1123,55 @@ function EmployeeAttendance() {
 
     <div
       style={{
-        minHeight: "100vh",
+        minHeight:
+          "100vh",
 
         background:
           "#f4f7fb",
 
-        display: "flex",
+        display:
+          "flex",
 
-        alignItems:
-          "center",
-
-        justifyContent:
-          "center",
-
-        padding: 20,
+        flexDirection:
+          "column",
       }}
     >
 
       <div
         style={{
-          width: "100%",
+          flex:
+            1,
 
-          maxWidth: 480,
+          display:
+            "flex",
+
+          alignItems:
+            "center",
+
+          justifyContent:
+            "center",
+
+          padding:
+            20,
+        }}
+      >
+
+      <div
+        style={{
+          width:
+            "100%",
+
+          maxWidth:
+            480,
 
           background:
             "#ffffff",
 
-          borderRadius: 20,
+          borderRadius:
+            20,
 
-          padding: 30,
+          padding:
+            30,
 
           boxShadow:
             "0 15px 45px rgba(0,0,0,0.10)",
@@ -848,13 +1188,17 @@ function EmployeeAttendance() {
           }}
         >
 
-          <div
+          <img
+            src="/mrd-ai-logo.svg"
+            alt="Mr.D AI"
             style={{
-              fontSize: 50,
+              width: 58,
+              height: 58,
+              objectFit: "contain",
+              filter:
+                "drop-shadow(0 8px 14px rgba(37,99,235,0.18))",
             }}
-          >
-            🤖
-          </div>
+          />
 
 
           <h1
@@ -874,7 +1218,8 @@ function EmployeeAttendance() {
 
           <p
             style={{
-              margin: 0,
+              margin:
+                0,
 
               color:
                 "#64748b",
@@ -914,16 +1259,22 @@ function EmployeeAttendance() {
 
             <input
               type="text"
+
               value={
                 employeeId
               }
+
               onChange={(e) =>
                 setEmployeeId(
-                  e.target.value
+                  e.target
+                    .value
                 )
               }
+
               placeholder="Example: GISB56"
+
               autoComplete="off"
+
               style={{
                 width:
                   "100%",
@@ -951,9 +1302,11 @@ function EmployeeAttendance() {
 
             <button
               type="submit"
+
               disabled={
                 loadingEmployee
               }
+
               style={{
                 width:
                   "100%",
@@ -961,7 +1314,8 @@ function EmployeeAttendance() {
                 padding:
                   "14px",
 
-                border: 0,
+                border:
+                  0,
 
                 borderRadius:
                   10,
@@ -1015,8 +1369,12 @@ function EmployeeAttendance() {
             >
 
               <strong>
-                {employee.full_name}
+                {
+                  employee
+                    .full_name
+                }
               </strong>
+
 
               <div
                 style={{
@@ -1028,14 +1386,61 @@ function EmployeeAttendance() {
                 }}
               >
 
-                {employee.employee_id}
+                {
+                  employee
+                    .employee_id
+                }
 
-                {employee.department
+                {employee
+                  .department
                   ? ` • ${employee.department}`
                   : ""}
 
               </div>
 
+            </div>
+
+
+            <div
+              style={{
+                background:
+                  "#eff6ff",
+
+                borderRadius:
+                  10,
+
+                padding:
+                  "10px 12px",
+
+                marginBottom:
+                  15,
+
+                fontSize:
+                  13,
+
+                color:
+                  "#1e40af",
+
+                textAlign:
+                  "center",
+              }}
+            >
+              Office Start:{" "}
+              <strong>
+                {
+                  officeStartTime
+                }
+              </strong>
+
+              {" • "}
+
+              Grace:{" "}
+              <strong>
+                {
+                  gracePeriodMinutes
+                }{" "}
+                min
+              </strong>
             </div>
 
 
@@ -1055,7 +1460,9 @@ function EmployeeAttendance() {
                   src={
                     selfiePreview
                   }
+
                   alt="Attendance selfie"
+
                   style={{
                     width:
                       200,
@@ -1080,12 +1487,15 @@ function EmployeeAttendance() {
 
               <button
                 type="button"
+
                 onClick={
                   openCamera
                 }
+
                 disabled={
                   verifying
                 }
+
                 style={{
                   width:
                     "100%",
@@ -1135,17 +1545,22 @@ function EmployeeAttendance() {
                   ref={
                     webcamRef
                   }
+
                   audio={
                     false
                   }
+
                   mirrored={
                     true
                   }
+
                   screenshotFormat=
                     "image/jpeg"
+
                   screenshotQuality={
                     1
                   }
+
                   videoConstraints={{
                     facingMode:
                       "user",
@@ -1160,12 +1575,15 @@ function EmployeeAttendance() {
                         720,
                     },
                   }}
+
                   onUserMedia={
                     handleCameraReady
                   }
+
                   onUserMediaError={
                     handleCameraError
                   }
+
                   style={{
                     width:
                       "100%",
@@ -1213,7 +1631,9 @@ function EmployeeAttendance() {
                     }}
                   >
 
-                    {cameraError}
+                    {
+                      cameraError
+                    }
 
                   </div>
 
@@ -1222,13 +1642,16 @@ function EmployeeAttendance() {
 
                 <button
                   type="button"
+
                   onClick={
                     captureSelfie
                   }
+
                   disabled={
                     !cameraReady ||
                     verifying
                   }
+
                   style={{
                     width:
                       "100%",
@@ -1266,11 +1689,13 @@ function EmployeeAttendance() {
 
                 <button
                   type="button"
+
                   onClick={() =>
                     setShowCamera(
                       false
                     )
                   }
+
                   style={{
                     width:
                       "100%",
@@ -1306,12 +1731,15 @@ function EmployeeAttendance() {
 
             <button
               type="button"
+
               onClick={
                 resetEmployee
               }
+
               disabled={
                 verifying
               }
+
               style={{
                 width:
                   "100%",
@@ -1391,6 +1819,10 @@ function EmployeeAttendance() {
         )}
 
       </div>
+
+      </div>
+
+      <Footer />
 
     </div>
 

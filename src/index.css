@@ -13,17 +13,9 @@ body{
   padding:40px;
 }
 
-.header{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:40px;
-}
 
-.header h1{
-  color:#2563eb;
-  font-size:42px;
-}
+
+
 
 .user{
   font-size:18px;
@@ -89,4 +81,884 @@ body{
 .footer p{
   font-style:italic;
   font-size:18px;
+}
+
+/* =========================================================
+   MR.D DARK MODE
+   ========================================================= */
+
+:root{
+  color-scheme:light;
+}
+
+:root[data-theme="dark"]{
+  color-scheme:dark;
+}
+
+
+/* MAIN APP */
+
+:root[data-theme="dark"] body{
+  background:#0b1120 !important;
+  color:#e5e7eb !important;
+}
+
+
+/* HEADER */
+
+:root[data-theme="dark"] .header{
+  background:#111827 !important;
+  border-color:#263244 !important;
+  box-shadow:
+    0 8px 24px
+    rgba(0,0,0,.30) !important;
+}
+
+:root[data-theme="dark"] .brand-text h1,
+:root[data-theme="dark"] .user-name{
+  color:#f8fafc !important;
+}
+
+:root[data-theme="dark"] .brand-text p,
+:root[data-theme="dark"] .user-company{
+  color:#94a3b8 !important;
+}
+
+:root[data-theme="dark"] .theme-toggle-btn{
+  background:#1e293b;
+  color:#f8fafc;
+  border-color:#334155;
+}
+
+
+/* SIDEBAR */
+
+:root[data-theme="dark"] .sidebar{
+  background:#111827 !important;
+  border-color:#263244 !important;
+}
+
+:root[data-theme="dark"] .sidebar .menu{
+  color:#e2e8f0 !important;
+}
+
+:root[data-theme="dark"] .sidebar .menu:hover{
+  background:#1e293b !important;
+}
+
+:root[data-theme="dark"] .sidebar .menu.active{
+  background:#2563eb !important;
+  color:#ffffff !important;
+}
+
+:root[data-theme="dark"] .logout-btn{
+  color:#f87171 !important;
+}
+
+
+/* MAIN CONTENT */
+
+:root[data-theme="dark"] .content,
+:root[data-theme="dark"] .inventory-page,
+:root[data-theme="dark"] .recycle-page{
+  background:#0b1120 !important;
+  color:#e5e7eb !important;
+}
+
+:root[data-theme="dark"] .page-title,
+:root[data-theme="dark"] .hero h2,
+:root[data-theme="dark"] h1,
+:root[data-theme="dark"] h2,
+:root[data-theme="dark"] h3{
+  color:#f8fafc;
+}
+
+:root[data-theme="dark"] .page-subtitle,
+:root[data-theme="dark"] .hero p{
+  color:#94a3b8 !important;
+}
+
+
+/* CARDS */
+
+:root[data-theme="dark"] .summary-card,
+:root[data-theme="dark"] .card{
+  background:#111827 !important;
+  color:#e5e7eb !important;
+
+  border-color:#263244 !important;
+
+  box-shadow:
+    0 10px 25px
+    rgba(0,0,0,.28) !important;
+}
+
+
+/* DASHBOARD SECTIONS */
+
+:root[data-theme="dark"] .dashboard-card,
+:root[data-theme="dark"] .quick-actions,
+:root[data-theme="dark"] .recent-activities,
+:root[data-theme="dark"] .recommendations{
+  background:#111827 !important;
+  color:#e5e7eb !important;
+  border-color:#263244 !important;
+}
+
+
+/* TABLES */
+
+:root[data-theme="dark"] .inventory-table{
+  background:#111827 !important;
+  color:#e5e7eb !important;
+}
+
+:root[data-theme="dark"] .inventory-table thead th{
+  background:#172554 !important;
+  color:#ffffff !important;
+  border-color:#334155 !important;
+}
+
+:root[data-theme="dark"] .inventory-table tbody td{
+  background:#111827;
+  color:#e5e7eb !important;
+  border-color:#334155 !important;
+}
+
+:root[data-theme="dark"] .inventory-table tbody tr:hover td{
+  background:#1e293b !important;
+}
+
+
+/* KEEP GLOBAL SEARCH FOCUS VISIBLE */
+
+:root[data-theme="dark"] .employee-focus-row td,
+:root[data-theme="dark"] .vendor-focus-row td,
+:root[data-theme="dark"] .document-focus-row td,
+:root[data-theme="dark"] .visitor-focus-row td,
+:root[data-theme="dark"] .expense-focus-row td,
+:root[data-theme="dark"] .event-focus-row td,
+:root[data-theme="dark"] .inventory-focus-row td{
+  background:#172554 !important;
+}
+
+
+/* FORMS */
+
+:root[data-theme="dark"] input,
+:root[data-theme="dark"] select,
+:root[data-theme="dark"] textarea{
+  background:#111827 !important;
+  color:#f8fafc !important;
+  border-color:#475569 !important;
+}
+
+:root[data-theme="dark"] input::placeholder,
+:root[data-theme="dark"] textarea::placeholder{
+  color:#94a3b8 !important;
+}
+
+
+/* MODALS */
+
+:root[data-theme="dark"] .modal{
+  background:#111827 !important;
+  color:#e5e7eb !important;
+}
+
+:root[data-theme="dark"] .modal-overlay{
+  background:rgba(0,0,0,.68) !important;
+}
+
+
+/* PROFILE */
+
+:root[data-theme="dark"] .user-profile{
+  background:#111827 !important;
+  border-color:#334155 !important;
+}
+
+
+/* GLOBAL SEARCH */
+
+:root[data-theme="dark"] .mrd-global-search-results{
+  background:#111827 !important;
+  border-color:#334155 !important;
+}
+
+:root[data-theme="dark"] .mrd-global-search-item{
+  color:#f8fafc !important;
+}
+
+:root[data-theme="dark"] .mrd-global-search-item:hover{
+  background:#1e293b !important;
+}
+
+:root[data-theme="dark"] .mrd-global-search-text strong{
+  color:#f8fafc !important;
+}
+
+:root[data-theme="dark"] .mrd-global-search-text small,
+:root[data-theme="dark"] .mrd-global-search-empty{
+  color:#94a3b8 !important;
+}
+
+:root[data-theme="dark"] .mrd-global-search-icon{
+  background:#1e293b !important;
+  border-color:#334155 !important;
+}
+
+
+/* FOOTER */
+
+:root[data-theme="dark"] .footer{
+  background:#0b1120 !important;
+  color:#94a3b8 !important;
+  border-color:#263244 !important;
+}
+
+
+/* LINKS / GENERIC TEXT */
+
+:root[data-theme="dark"] label,
+:root[data-theme="dark"] p,
+:root[data-theme="dark"] td{
+  color:#e2e8f0;
+}
+
+
+/* =========================================================
+   MR.D DARK MODE
+   ========================================================= */
+
+:root{
+  color-scheme:light;
+}
+
+:root[data-theme="dark"]{
+  color-scheme:dark;
+}
+
+
+/* MAIN APP */
+
+:root[data-theme="dark"] body{
+  background:#0b1120 !important;
+  color:#e5e7eb !important;
+}
+
+
+/* HEADER */
+
+:root[data-theme="dark"] .header{
+  background:#111827 !important;
+  border-color:#263244 !important;
+  box-shadow:
+    0 8px 24px
+    rgba(0,0,0,.30) !important;
+}
+
+:root[data-theme="dark"] .brand-text h1,
+:root[data-theme="dark"] .user-name{
+  color:#f8fafc !important;
+}
+
+:root[data-theme="dark"] .brand-text p,
+:root[data-theme="dark"] .user-company{
+  color:#94a3b8 !important;
+}
+
+:root[data-theme="dark"] .theme-toggle-btn{
+  background:#1e293b;
+  color:#f8fafc;
+  border-color:#334155;
+}
+
+
+/* SIDEBAR */
+
+:root[data-theme="dark"] .sidebar{
+  background:#111827 !important;
+  border-color:#263244 !important;
+}
+
+:root[data-theme="dark"] .sidebar .menu{
+  color:#e2e8f0 !important;
+}
+
+:root[data-theme="dark"] .sidebar .menu:hover{
+  background:#1e293b !important;
+}
+
+:root[data-theme="dark"] .sidebar .menu.active{
+  background:#2563eb !important;
+  color:#ffffff !important;
+}
+
+:root[data-theme="dark"] .logout-btn{
+  color:#f87171 !important;
+}
+
+
+/* MAIN CONTENT */
+
+:root[data-theme="dark"] .content,
+:root[data-theme="dark"] .inventory-page,
+:root[data-theme="dark"] .recycle-page{
+  background:#0b1120 !important;
+  color:#e5e7eb !important;
+}
+
+:root[data-theme="dark"] .page-title,
+:root[data-theme="dark"] .hero h2,
+:root[data-theme="dark"] h1,
+:root[data-theme="dark"] h2,
+:root[data-theme="dark"] h3{
+  color:#f8fafc;
+}
+
+:root[data-theme="dark"] .page-subtitle,
+:root[data-theme="dark"] .hero p{
+  color:#94a3b8 !important;
+}
+
+
+/* CARDS */
+
+:root[data-theme="dark"] .summary-card,
+:root[data-theme="dark"] .card{
+  background:#111827 !important;
+  color:#e5e7eb !important;
+
+  border-color:#263244 !important;
+
+  box-shadow:
+    0 10px 25px
+    rgba(0,0,0,.28) !important;
+}
+
+
+/* DASHBOARD SECTIONS */
+
+:root[data-theme="dark"] .dashboard-card,
+:root[data-theme="dark"] .quick-actions,
+:root[data-theme="dark"] .recent-activities,
+:root[data-theme="dark"] .recommendations{
+  background:#111827 !important;
+  color:#e5e7eb !important;
+  border-color:#263244 !important;
+}
+
+
+/* TABLES */
+
+:root[data-theme="dark"] .inventory-table{
+  background:#111827 !important;
+  color:#e5e7eb !important;
+}
+
+:root[data-theme="dark"] .inventory-table thead th{
+  background:#172554 !important;
+  color:#ffffff !important;
+  border-color:#334155 !important;
+}
+
+:root[data-theme="dark"] .inventory-table tbody td{
+  background:#111827;
+  color:#e5e7eb !important;
+  border-color:#334155 !important;
+}
+
+:root[data-theme="dark"] .inventory-table tbody tr:hover td{
+  background:#1e293b !important;
+}
+
+
+/* KEEP GLOBAL SEARCH FOCUS VISIBLE */
+
+:root[data-theme="dark"] .employee-focus-row td,
+:root[data-theme="dark"] .vendor-focus-row td,
+:root[data-theme="dark"] .document-focus-row td,
+:root[data-theme="dark"] .visitor-focus-row td,
+:root[data-theme="dark"] .expense-focus-row td,
+:root[data-theme="dark"] .event-focus-row td,
+:root[data-theme="dark"] .inventory-focus-row td{
+  background:#172554 !important;
+}
+
+
+/* FORMS */
+
+:root[data-theme="dark"] input,
+:root[data-theme="dark"] select,
+:root[data-theme="dark"] textarea{
+  background:#111827 !important;
+  color:#f8fafc !important;
+  border-color:#475569 !important;
+}
+
+:root[data-theme="dark"] input::placeholder,
+:root[data-theme="dark"] textarea::placeholder{
+  color:#94a3b8 !important;
+}
+
+
+/* MODALS */
+
+:root[data-theme="dark"] .modal{
+  background:#111827 !important;
+  color:#e5e7eb !important;
+}
+
+:root[data-theme="dark"] .modal-overlay{
+  background:rgba(0,0,0,.68) !important;
+}
+
+
+/* PROFILE */
+
+:root[data-theme="dark"] .user-profile{
+  background:#111827 !important;
+  border-color:#334155 !important;
+}
+
+
+/* GLOBAL SEARCH */
+
+:root[data-theme="dark"] .mrd-global-search-results{
+  background:#111827 !important;
+  border-color:#334155 !important;
+}
+
+:root[data-theme="dark"] .mrd-global-search-item{
+  color:#f8fafc !important;
+}
+
+:root[data-theme="dark"] .mrd-global-search-item:hover{
+  background:#1e293b !important;
+}
+
+:root[data-theme="dark"] .mrd-global-search-text strong{
+  color:#f8fafc !important;
+}
+
+:root[data-theme="dark"] .mrd-global-search-text small,
+:root[data-theme="dark"] .mrd-global-search-empty{
+  color:#94a3b8 !important;
+}
+
+:root[data-theme="dark"] .mrd-global-search-icon{
+  background:#1e293b !important;
+  border-color:#334155 !important;
+}
+
+
+/* FOOTER */
+
+:root[data-theme="dark"] .footer{
+  background:#0b1120 !important;
+  color:#94a3b8 !important;
+  border-color:#263244 !important;
+}
+
+
+/* LINKS / GENERIC TEXT */
+
+:root[data-theme="dark"] label,
+:root[data-theme="dark"] p,
+:root[data-theme="dark"] td{
+  color:#e2e8f0;
+}
+
+/* =========================================================
+   MR.D DARK MODE — SOFTER PANELS
+   ========================================================= */
+
+/* Main white dashboard panels */
+:root[data-theme="dark"] .quick-actions,
+:root[data-theme="dark"] .dashboard-card,
+:root[data-theme="dark"] .recent-activities,
+:root[data-theme="dark"] .recommendations,
+:root[data-theme="dark"] .summary-card,
+:root[data-theme="dark"] .card{
+  background:#182230 !important;
+  color:#e5e7eb !important;
+  border-color:#2a3a4d !important;
+  box-shadow:
+    0 10px 25px
+    rgba(0,0,0,.22) !important;
+}
+
+/* Quick action individual tiles */
+:root[data-theme="dark"] .quick-action-card,
+:root[data-theme="dark"] .quick-action-item{
+  background:#202b3a !important;
+  color:#f1f5f9 !important;
+  border-color:#334155 !important;
+}
+
+/* Recommendation / statistic inner boxes */
+:root[data-theme="dark"] .recommendation-item,
+:root[data-theme="dark"] .dashboard-stat,
+:root[data-theme="dark"] .stat-card{
+  background:#202b3a !important;
+  color:#e5e7eb !important;
+  border-color:#334155 !important;
+}
+
+/* Weather card */
+:root[data-theme="dark"] .weather-card{
+  background:#182230 !important;
+  color:#e5e7eb !important;
+  border-color:#334155 !important;
+}
+
+/* Light text inside dark panels */
+:root[data-theme="dark"] .quick-actions h3,
+:root[data-theme="dark"] .quick-actions p,
+:root[data-theme="dark"] .dashboard-card h3,
+:root[data-theme="dark"] .dashboard-card p,
+:root[data-theme="dark"] .recent-activities h3,
+:root[data-theme="dark"] .recommendations h3{
+  color:#e5e7eb !important;
+}
+
+/* Inner bordered boxes that remain white */
+:root[data-theme="dark"] .summary-card > *,
+:root[data-theme="dark"] .dashboard-card > *,
+:root[data-theme="dark"] .quick-actions > *{
+  border-color:#334155;
+}
+
+/* =========================================================
+   MR.D DARK MODE — TEXT VISIBILITY FIX
+   ========================================================= */
+
+/* Main dashboard section headings */
+:root[data-theme="dark"] .quick-actions h2,
+:root[data-theme="dark"] .quick-actions h3,
+:root[data-theme="dark"] .quick-actions p,
+:root[data-theme="dark"] .dashboard-card h2,
+:root[data-theme="dark"] .dashboard-card h3,
+:root[data-theme="dark"] .dashboard-card p,
+:root[data-theme="dark"] .recent-activities h2,
+:root[data-theme="dark"] .recent-activities h3,
+:root[data-theme="dark"] .recent-activities p,
+:root[data-theme="dark"] .recommendations h2,
+:root[data-theme="dark"] .recommendations h3,
+:root[data-theme="dark"] .recommendations p{
+  color:#e5e7eb !important;
+}
+
+/* Generic dashboard text inside dark mode */
+:root[data-theme="dark"] .dashboard-card span,
+:root[data-theme="dark"] .quick-actions span,
+:root[data-theme="dark"] .recent-activities span,
+:root[data-theme="dark"] .recommendations span{
+  color:#e5e7eb !important;
+}
+
+/* Softer secondary text */
+:root[data-theme="dark"] .dashboard-card small,
+:root[data-theme="dark"] .quick-actions small,
+:root[data-theme="dark"] .recent-activities small,
+:root[data-theme="dark"] .recommendations small{
+  color:#94a3b8 !important;
+}
+
+/* Large white dashboard panels -> charcoal */
+:root[data-theme="dark"] .quick-actions,
+:root[data-theme="dark"] .dashboard-card,
+:root[data-theme="dark"] .recent-activities,
+:root[data-theme="dark"] .recommendations{
+  background:#182230 !important;
+  color:#e5e7eb !important;
+  border-color:#334155 !important;
+}
+
+/* Inner dashboard tiles */
+:root[data-theme="dark"] .quick-action-card,
+:root[data-theme="dark"] .quick-action-item,
+:root[data-theme="dark"] .recommendation-item,
+:root[data-theme="dark"] .dashboard-stat,
+:root[data-theme="dark"] .stat-card{
+  background:#202b3a !important;
+  color:#f1f5f9 !important;
+  border-color:#334155 !important;
+}
+
+/* Make normal text readable */
+:root[data-theme="dark"] .quick-action-card *,
+:root[data-theme="dark"] .quick-action-item *,
+:root[data-theme="dark"] .recommendation-item *,
+:root[data-theme="dark"] .dashboard-stat *,
+:root[data-theme="dark"] .stat-card *{
+  color:#f1f5f9 !important;
+}
+
+/* =========================================================
+   MR.D DARK MODE — DASHBOARD FINAL OVERRIDE
+   ========================================================= */
+
+/* ---------------------------------------------------------
+   LARGE DASHBOARD PANELS
+   --------------------------------------------------------- */
+
+:root[data-theme="dark"] .dashboard-quick-actions,
+:root[data-theme="dark"] .ai-briefing,
+:root[data-theme="dark"] .business-overview,
+:root[data-theme="dark"] .recent-section,
+:root[data-theme="dark"] .dashboard-live-card{
+  background:
+    linear-gradient(
+      145deg,
+      #1f2937 0%,
+      #182230 55%,
+      #141e2b 100%
+    ) !important;
+
+  color:#e5e7eb !important;
+
+  border-color:#334155 !important;
+
+  box-shadow:
+    0 2px 1px rgba(255,255,255,.04) inset,
+    0 10px 22px rgba(0,0,0,.28),
+    0 28px 54px rgba(0,0,0,.22) !important;
+}
+
+
+/* ---------------------------------------------------------
+   REMOVE WHITE 3D SHINE FROM LARGE PANELS
+   --------------------------------------------------------- */
+
+:root[data-theme="dark"] .dashboard-live-card::before,
+:root[data-theme="dark"] .ai-briefing::before,
+:root[data-theme="dark"] .business-overview::before,
+:root[data-theme="dark"] .recent-section::before{
+  background:rgba(255,255,255,.06) !important;
+}
+
+:root[data-theme="dark"] .dashboard-live-card::after,
+:root[data-theme="dark"] .ai-briefing::after,
+:root[data-theme="dark"] .business-overview::after,
+:root[data-theme="dark"] .recent-section::after{
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,.055),
+      rgba(255,255,255,0)
+    ) !important;
+}
+
+
+/* ---------------------------------------------------------
+   QUICK ACTIONS
+   --------------------------------------------------------- */
+
+:root[data-theme="dark"] .dashboard-quick-actions{
+  border:1px solid #334155 !important;
+}
+
+:root[data-theme="dark"] .dashboard-quick-actions h3{
+  color:#f8fafc !important;
+}
+
+:root[data-theme="dark"] .dashboard-quick-actions p{
+  color:#94a3b8 !important;
+}
+
+:root[data-theme="dark"] .dashboard-quick-actions-grid button{
+  background:
+    linear-gradient(
+      145deg,
+      #263244,
+      #202b3a
+    ) !important;
+
+  color:#f8fafc !important;
+
+  border-color:#3b4a5f !important;
+
+  box-shadow:
+    0 2px 1px rgba(255,255,255,.04) inset,
+    0 7px 14px rgba(0,0,0,.22) !important;
+}
+
+:root[data-theme="dark"] .dashboard-quick-actions-grid button strong{
+  color:#f8fafc !important;
+}
+
+:root[data-theme="dark"] .dashboard-quick-actions-grid button:hover{
+  background:#2b394c !important;
+}
+
+
+/* ---------------------------------------------------------
+   AI BRIEFING
+   --------------------------------------------------------- */
+
+:root[data-theme="dark"] .ai-briefing h2,
+:root[data-theme="dark"] .ai-briefing h3{
+  color:#f8fafc !important;
+}
+
+:root[data-theme="dark"] .ai-briefing p{
+  color:#a8b3c5 !important;
+}
+
+:root[data-theme="dark"] .ai-briefing li{
+  background:
+    linear-gradient(
+      145deg,
+      #263244,
+      #202b3a
+    ) !important;
+
+  color:#e5e7eb !important;
+
+  border-color:#3b4a5f !important;
+
+  box-shadow:
+    0 2px 1px rgba(255,255,255,.04) inset,
+    0 6px 12px rgba(0,0,0,.18) !important;
+}
+
+:root[data-theme="dark"] .ai-briefing li strong{
+  color:#ffffff !important;
+}
+
+:root[data-theme="dark"] .ai-briefing hr{
+  border-color:#334155 !important;
+}
+
+
+/* ---------------------------------------------------------
+   BUSINESS OVERVIEW
+   --------------------------------------------------------- */
+
+:root[data-theme="dark"] .business-overview h2{
+  color:#f8fafc !important;
+}
+
+:root[data-theme="dark"] .overview-row{
+  border-color:#334155 !important;
+}
+
+:root[data-theme="dark"] .overview-label{
+  color:#cbd5e1 !important;
+}
+
+:root[data-theme="dark"] .overview-label strong{
+  color:#f8fafc !important;
+}
+
+:root[data-theme="dark"] .overview-value{
+  color:#cbd5e1 !important;
+}
+
+:root[data-theme="dark"] .overview-bar{
+  background:#334155 !important;
+}
+
+:root[data-theme="dark"] .overview-row:hover{
+  background:
+    linear-gradient(
+      90deg,
+      rgba(37,99,235,.14),
+      rgba(51,65,85,.35)
+    ) !important;
+}
+
+
+/* ---------------------------------------------------------
+   RECENT ACTIVITY
+   --------------------------------------------------------- */
+
+:root[data-theme="dark"] .recent-section h2{
+  color:#f8fafc !important;
+}
+
+:root[data-theme="dark"] .recent-section{
+  color:#e5e7eb !important;
+}
+
+
+/* ---------------------------------------------------------
+   DASHBOARD KPI CARDS
+   --------------------------------------------------------- */
+
+:root[data-theme="dark"] .dashboard-card{
+  background:
+    linear-gradient(
+      145deg,
+      #1f2937,
+      #182230
+    ) !important;
+
+  border-color:#334155 !important;
+
+  box-shadow:
+    0 2px 1px rgba(255,255,255,.04) inset,
+    0 10px 22px rgba(0,0,0,.25),
+    0 28px 50px rgba(0,0,0,.18) !important;
+}
+
+:root[data-theme="dark"] .dashboard-card::before{
+  background:rgba(255,255,255,.05) !important;
+}
+
+:root[data-theme="dark"] .dashboard-card::after{
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,.05),
+      transparent
+    ) !important;
+}
+
+:root[data-theme="dark"] .dashboard-info h3{
+  color:#cbd5e1 !important;
+}
+
+:root[data-theme="dark"] .dashboard-info h1{
+  color:#ffffff !important;
+}
+
+
+/* ---------------------------------------------------------
+   WEATHER CARD
+   --------------------------------------------------------- */
+
+:root[data-theme="dark"] .dashboard-live-location strong,
+:root[data-theme="dark"] .dashboard-live-time strong{
+  color:#ffffff !important;
+}
+
+:root[data-theme="dark"] .dashboard-live-location span:not(.dashboard-weather-icon),
+:root[data-theme="dark"] .dashboard-live-time span,
+:root[data-theme="dark"] .dashboard-live-meta{
+  color:#a8b3c5 !important;
+}
+
+:root[data-theme="dark"] .dashboard-live-divider{
+  background:#475569 !important;
+}
+
+:root[data-theme="dark"] .dashboard-live-meta{
+  border-color:#334155 !important;
+}
+
+
+/* ---------------------------------------------------------
+   DARK MODE PAGE TITLE
+   --------------------------------------------------------- */
+
+:root[data-theme="dark"] .dashboard-header h1{
+  color:#f8fafc !important;
+  text-shadow:none !important;
+}
+
+:root[data-theme="dark"] .dashboard-header p{
+  color:#cbd5e1 !important;
 }

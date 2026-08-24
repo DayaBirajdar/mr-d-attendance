@@ -1,5 +1,6 @@
 function EmployeeTable({
   employees,
+  focusedEmployeeId,
   onEdit,
   onDelete,
 }) {
@@ -33,7 +34,16 @@ function EmployeeTable({
           </tr>
         ) : (
           employees.map((employee) => (
-            <tr key={employee.id}>
+            <tr
+              key={employee.id}
+              data-employee-id={employee.id}
+              className={
+                Number(employee.id) ===
+                Number(focusedEmployeeId)
+                  ? "employee-focus-row"
+                  : ""
+              }
+            >
               <td>{employee.id}</td>
 
               <td>

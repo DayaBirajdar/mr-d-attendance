@@ -10,6 +10,7 @@ function AIBriefing() {
     vendors: 0,
     visitorsToday: 0,
     checkedIn: 0,
+    maintenanceItems: 0,
   });
 
   useEffect(() => {
@@ -29,7 +30,7 @@ function AIBriefing() {
     ] = await Promise.all([
       supabase
         .from("inventory")
-        .select("*", { count: "exact", head: true }),
+        .select("*", { count: "exact" }),
 
       supabase
         .from("expenses")
@@ -52,7 +53,12 @@ function AIBriefing() {
         .select("*"),
     ]);
 
+    const inventoryList = inventory.data || [];
     const visitorList = visitors.data || [];
+
+    const maintenanceItems = inventoryList.filter(
+      (item) => item.status === "Maintenance"
+    ).length;
 
     const visitorsToday = visitorList.filter(
       (v) =>
@@ -72,6 +78,7 @@ function AIBriefing() {
       vendors: vendors.count || 0,
       visitorsToday,
       checkedIn,
+      maintenanceItems,
     });
   }
 
@@ -150,9 +157,9 @@ function AIBriefing() {
           </li>
         )}
 
-        {summary.inventory < 10 && (
+        {summary.maintenanceItems > 0 && (
           <li>
-            📦 Inventory is running low.
+            🛠️ {summary.maintenanceItems} inventory item(s) need maintenance attention.
           </li>
         )}
 

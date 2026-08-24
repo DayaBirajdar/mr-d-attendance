@@ -16,6 +16,8 @@
 
   flex:1;
 
+  min-width:0;
+
   padding:35px;
 
   background:var(--background);
@@ -33,5 +35,440 @@
   text-align:center;
 
   color:var(--text-light);
+
+}
+/* =========================================================
+   MR.D FOOTER — TEAM POSSIBLE BRANDING
+   ========================================================= */
+
+.footer-brand{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+.footer-team-logo{
+  width:48px;
+  height:48px;
+  object-fit:contain;
+  border-radius:50%;
+  flex-shrink:0;
+
+  filter:
+    drop-shadow(
+      0 3px 6px
+      rgba(15,23,42,.18)
+    );
+}
+
+.footer-left{
+  display:flex;
+  align-items:center;
+}
+
+/* Dark mode logo depth */
+:root[data-theme="dark"] .footer-team-logo{
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.12),
+    0 5px 12px rgba(0,0,0,.30);
+}
+
+/* Mobile footer */
+@media (max-width:768px){
+
+  .footer{
+    gap:14px;
+  }
+
+  .footer-team-logo{
+    width:42px;
+    height:42px;
+  }
+
+}
+
+/* =========================================================
+   MR.D FOOTER — CENTERED BRAND BLOCK
+   ========================================================= */
+
+.footer{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+
+  min-height:110px;
+
+  padding:22px 30px !important;
+
+  text-align:left !important;
+}
+
+.footer-brand-block{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  gap:16px;
+}
+
+.footer-team-logo{
+  width:58px;
+  height:58px;
+
+  object-fit:contain;
+  border-radius:50%;
+
+  flex-shrink:0;
+}
+
+.footer-brand-text{
+  display:flex;
+  flex-direction:column;
+
+  gap:4px;
+
+  color:#475569;
+}
+
+.footer-brand-text strong{
+  font-size:15px;
+  color:#334155;
+}
+
+.footer-brand-text span{
+  font-size:13px;
+  color:#64748b;
+}
+
+
+/* DARK MODE */
+
+:root[data-theme="dark"] .footer{
+  background:#0f172a !important;
+  border-color:#263244 !important;
+}
+
+:root[data-theme="dark"] .footer-brand-text strong{
+  color:#f8fafc !important;
+}
+
+:root[data-theme="dark"] .footer-brand-text span{
+  color:#cbd5e1 !important;
+}
+
+
+/* MOBILE */
+
+@media(max-width:600px){
+
+  .footer-brand-block{
+    flex-direction:column;
+    text-align:center;
+  }
+
+  .footer-brand-text{
+    align-items:center;
+  }
+
+}
+
+/* =========================================================
+   MR.D FOOTER — FINAL ALIGNMENT
+   ========================================================= */
+
+.footer{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+
+  min-height:125px !important;
+  padding:24px 30px !important;
+
+  text-align:center !important;
+}
+
+.footer-brand-block{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+
+  gap:18px !important;
+}
+
+/* Original Team Possible logo
+   Height matches complete 3-line text block */
+.footer-team-logo{
+  width:66px !important;
+  height:66px !important;
+
+  object-fit:contain !important;
+  border-radius:50% !important;
+
+  flex:0 0 66px !important;
+}
+
+/* Three lines become one balanced block */
+.footer-brand-text{
+  width:225px !important;
+  min-height:66px !important;
+
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:stretch !important;
+  justify-content:space-between !important;
+
+  gap:3px !important;
+
+  text-align:center !important;
+  line-height:1.25 !important;
+}
+
+.footer-brand-text strong{
+  display:block !important;
+
+  margin:0 !important;
+
+  color:#334155 !important;
+  font-size:15px !important;
+  font-weight:800 !important;
+
+  text-align:center !important;
+  white-space:nowrap !important;
+}
+
+.footer-brand-text span{
+  display:block !important;
+
+  margin:0 !important;
+
+  color:#64748b !important;
+  font-size:13px !important;
+
+  text-align:center !important;
+  white-space:nowrap !important;
+}
+
+/* Dark mode */
+:root[data-theme="dark"] .footer-brand-text strong{
+  color:#f8fafc !important;
+}
+
+:root[data-theme="dark"] .footer-brand-text span{
+  color:#cbd5e1 !important;
+}
+
+/* Mobile */
+@media(max-width:600px){
+
+  .footer-brand-block{
+    flex-direction:column !important;
+    gap:10px !important;
+  }
+
+  .footer-team-logo{
+    width:58px !important;
+    height:58px !important;
+    flex-basis:58px !important;
+  }
+
+  .footer-brand-text{
+    width:220px !important;
+    min-height:auto !important;
+    gap:4px !important;
+  }
+
+}
+
+/* =========================================================
+   TEAM POSSIBLE MOTTO ICON
+   ========================================================= */
+
+.footer-motto{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:5px !important;
+}
+
+.footer-boy-icon{
+  width:18px !important;
+  height:19px !important;
+  object-fit:contain !important;
+  flex-shrink:0 !important;
+}
+
+/* Keep the black figure visible in Dark Mode */
+:root[data-theme="dark"] .footer-boy-icon{
+  filter:invert(1) brightness(1.15);
+}
+
+/* =========================================================
+   MR.D FOOTER — FINAL APPROVED IMAGE
+   ========================================================= */
+
+.footer-image-only{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+
+  min-height:120px !important;
+  padding:18px 24px !important;
+
+  overflow:hidden !important;
+}
+
+.footer-brand-image{
+  display:block;
+
+  width:auto;
+  height:88px;
+
+  max-width:90%;
+
+  object-fit:contain;
+}
+
+/* Dark mode */
+:root[data-theme="dark"] .footer-image-only{
+  background:#0b1120 !important;
+}
+
+/* Mobile */
+@media(max-width:600px){
+
+  .footer-image-only{
+    min-height:105px !important;
+    padding:14px 16px !important;
+  }
+
+  .footer-brand-image{
+    height:72px;
+    max-width:96%;
+  }
+
+}
+
+/* =========================================================
+   MR.D FOOTER — RESTORE AFTER IMAGE FOOTER TEST
+   ========================================================= */
+
+.footer-image-only,
+.footer-brand-image{
+  all:unset;
+}
+
+.footer{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+
+  min-height:125px !important;
+  padding:24px 30px !important;
+
+  background:#ffffff !important;
+  border-top:1px solid #e2e8f0 !important;
+
+  text-align:center !important;
+}
+
+.footer-brand-block{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+
+  gap:18px !important;
+}
+
+.footer-team-logo{
+  width:66px !important;
+  height:66px !important;
+
+  object-fit:contain !important;
+  border-radius:50% !important;
+
+  flex:0 0 66px !important;
+
+  filter:
+    drop-shadow(
+      0 3px 6px
+      rgba(15,23,42,.18)
+    ) !important;
+}
+
+.footer-brand-text{
+  width:225px !important;
+  min-height:66px !important;
+
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:stretch !important;
+  justify-content:space-between !important;
+
+  gap:3px !important;
+
+  text-align:center !important;
+  line-height:1.25 !important;
+}
+
+.footer-brand-text strong{
+  margin:0 !important;
+
+  color:#334155 !important;
+  font-size:15px !important;
+  font-weight:800 !important;
+
+  text-align:center !important;
+  white-space:nowrap !important;
+}
+
+.footer-brand-text span{
+  margin:0 !important;
+
+  color:#64748b !important;
+  font-size:13px !important;
+
+  text-align:center !important;
+  white-space:nowrap !important;
+}
+
+.footer-motto{
+  display:block !important;
+}
+
+/* DARK MODE */
+
+:root[data-theme="dark"] .footer{
+  background:#0b1120 !important;
+  border-color:#263244 !important;
+}
+
+:root[data-theme="dark"] .footer-brand-text strong{
+  color:#f8fafc !important;
+}
+
+:root[data-theme="dark"] .footer-brand-text span{
+  color:#cbd5e1 !important;
+}
+
+/* MOBILE */
+
+@media(max-width:600px){
+
+  .footer-brand-block{
+    flex-direction:column !important;
+    gap:10px !important;
+  }
+
+  .footer-team-logo{
+    width:58px !important;
+    height:58px !important;
+    flex-basis:58px !important;
+  }
+
+  .footer-brand-text{
+    width:220px !important;
+    min-height:auto !important;
+    gap:4px !important;
+  }
 
 }

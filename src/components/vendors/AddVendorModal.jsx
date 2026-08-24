@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 function AddVendorModal({
-  vendor,
+  item,
   onClose,
   onSave,
 }) {
@@ -16,28 +16,44 @@ function AddVendorModal({
   });
 
   useEffect(() => {
-    if (vendor) {
+    if (item) {
       setFormData({
-        company: vendor.company || "",
-        contact_person: vendor.contact_person || "",
-        phone: vendor.phone || "",
-        email: vendor.email || "",
-        gst: vendor.gst || "",
-        address: vendor.address || "",
-        remarks: vendor.remarks || "",
+        company: item.company || "",
+        contact_person: item.contact_person || "",
+        phone: item.phone || "",
+        email: item.email || "",
+        gst: item.gst || "",
+        address: item.address || "",
+        remarks: item.remarks || "",
+      });
+    } else {
+      setFormData({
+        company: "",
+        contact_person: "",
+        phone: "",
+        email: "",
+        gst: "",
+        address: "",
+        remarks: "",
       });
     }
-  }, [vendor]);
+  }, [item]);
 
   function handleChange(e) {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    const {
+      name,
+      value,
+    } = e.target;
+
+    setFormData((previous) => ({
+      ...previous,
+      [name]: value,
+    }));
   }
 
   function handleSubmit(e) {
     e.preventDefault();
+
     onSave(formData);
   }
 
@@ -46,7 +62,7 @@ function AddVendorModal({
       <div className="modal">
 
         <h2>
-          {vendor ? "Edit Vendor" : "Add Vendor"}
+          {item ? "✏️ Edit Vendor" : "➕ Add Vendor"}
         </h2>
 
         <form onSubmit={handleSubmit}>
@@ -113,8 +129,11 @@ function AddVendorModal({
               marginTop: "20px",
             }}
           >
+
             <button type="submit">
-              💾 Save
+              {item
+                ? "Update Vendor"
+                : "💾 Save Vendor"}
             </button>
 
             <button
@@ -123,6 +142,7 @@ function AddVendorModal({
             >
               Cancel
             </button>
+
           </div>
 
         </form>

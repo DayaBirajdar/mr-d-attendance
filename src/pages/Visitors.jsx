@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import { logActivity } from "../lib/activityLog";
 
 import AddVisitorModal from "../components/visitors/AddVisitorModal";
 
@@ -8,6 +10,15 @@ function Visitors() {
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [selectedVisitor, setSelectedVisitor] = useState(null);
+
+  const [searchParams, setSearchParams] =
+    useSearchParams();
+
+  const focusedVisitorId =
+    searchParams.get("focus")
+      ? Number(searchParams.get("focus"))
+      : null;
+
 
   useEffect(() => {
   loadVisitors();
@@ -18,6 +29,63 @@ function Visitors() {
 
   return () => clearInterval(interval);
 }, []);
+
+  useEffect(() => {
+    if (searchParams.get("action") === "add") {
+      setSelectedVisitor(null);
+      setShowModal(true);
+
+      setSearchParams(
+        {},
+        { replace: true }
+      );
+    }
+  }, [
+    searchParams,
+    setSearchParams,
+  ]);
+
+  useEffect(() => {
+    if (
+      !focusedVisitorId ||
+      visitors.length === 0
+    ) {
+      return;
+    }
+
+    const focusedVisitor =
+      visitors.find(
+        (visitor) =>
+          Number(visitor.id) ===
+          Number(focusedVisitorId)
+      );
+
+    if (!focusedVisitor) {
+      return;
+    }
+
+    setSearch(
+      focusedVisitor.visitor_name ||
+      ""
+    );
+
+    setTimeout(() => {
+      const row =
+        document.querySelector(
+          `[data-visitor-id="${focusedVisitorId}"]`
+        );
+
+      if (row) {
+        row.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+    }, 150);
+  }, [
+    focusedVisitorId,
+    visitors,
+  ]);
 
   async function loadVisitors() {
     const { data, error } = await supabase
@@ -53,6 +121,19 @@ function Visitors() {
       alert(JSON.stringify(error, null, 2));
       return;
     }
+
+    await logActivity({
+      module: "Visitors",
+      action: selectedVisitor ? "Updated" : "Checked In",
+      title: visitor.visitor_name || "Visitor",
+      details: [
+        visitor.company && `Company: ${visitor.company}`,
+        visitor.purpose && `Purpose: ${visitor.purpose}`,
+        visitor.status && `Status: ${visitor.status}`,
+      ]
+        .filter(Boolean)
+        .join(" · "),
+    });
 
     setShowModal(false);
     setSelectedVisitor(null);
@@ -96,6 +177,13 @@ function Visitors() {
     return;
   }
 
+  await logActivity({
+    module: "Visitors",
+    action: "Moved to Recycle Bin",
+    title: visitor.visitor_name || "Visitor",
+    details: "Visitor record moved to Recycle Bin",
+  });
+
   loadVisitors();
 }
 
@@ -112,6 +200,13 @@ function Visitors() {
       console.error(error);
       return;
     }
+
+    await logActivity({
+      module: "Visitors",
+      action: "Checked Out",
+      title: visitor.visitor_name || "Visitor",
+      details: "Visitor checked out",
+    });
 
     loadVisitors();
   }
@@ -260,7 +355,16 @@ function Visitors() {
 
             filteredVisitors.map((visitor) => (
 
-              <tr key={visitor.id}>
+              <tr
+                key={visitor.id}
+                data-visitor-id={visitor.id}
+                className={
+                  Number(visitor.id) ===
+                  Number(focusedVisitorId)
+                    ? "visitor-focus-row"
+                    : ""
+                }
+              >
 
                 <td>{visitor.id}</td>
 

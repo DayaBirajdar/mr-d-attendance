@@ -1,5 +1,6 @@
 function VendorTable({
   vendors,
+  focusedVendorId,
   onEdit,
   onDelete,
 }) {
@@ -26,7 +27,16 @@ function VendorTable({
           </tr>
         ) : (
           vendors.map((vendor) => (
-            <tr key={vendor.id}>
+            <tr
+              key={vendor.id}
+              data-vendor-id={vendor.id}
+              className={
+                Number(vendor.id) ===
+                Number(focusedVendorId)
+                  ? "vendor-focus-row"
+                  : ""
+              }
+            >
               <td>{vendor.id}</td>
               <td>{vendor.company}</td>
               <td>{vendor.contact_person}</td>

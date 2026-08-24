@@ -28,3 +28,12 @@ dist-ssr
 .env.*
 !.env.example
 src.zip
+.vercel
+
+# Local development backups
+*.bak
+*.before-*
+*-backup.svg
+
+# Local Vercel configuration
+.vercel/
