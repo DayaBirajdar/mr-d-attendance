@@ -3,6 +3,7 @@ function EmployeeTable({
   focusedEmployeeId,
   onEdit,
   onDelete,
+  isOnline = true,
 }) {
   return (
     <table className="inventory-table">
@@ -108,6 +109,20 @@ function EmployeeTable({
               <td>
                 <button
                   className="edit-btn"
+                  disabled={!isOnline}
+                  title={
+                    !isOnline
+                      ? "Reconnect to edit"
+                      : "Edit"
+                  }
+                  style={{
+                    opacity: isOnline
+                      ? 1
+                      : 0.5,
+                    cursor: isOnline
+                      ? "pointer"
+                      : "not-allowed",
+                  }}
                   onClick={() => onEdit(employee)}
                 >
                   Edit
@@ -115,7 +130,21 @@ function EmployeeTable({
 
                 <button
                   className="delete-btn"
-                  style={{ marginLeft: "10px" }}
+                  disabled={!isOnline}
+                  title={
+                    !isOnline
+                      ? "Reconnect to delete"
+                      : "Delete"
+                  }
+                  style={{
+                    marginLeft: "10px",
+                    opacity: isOnline
+                      ? 1
+                      : 0.5,
+                    cursor: isOnline
+                      ? "pointer"
+                      : "not-allowed",
+                  }}
                   onClick={() => onDelete(employee.id)}
                 >
                   Delete

@@ -4,6 +4,7 @@ function AddEmployeeModal({
   item,
   onClose,
   onSave,
+  isOnline = true,
 }) {
   const [form, setForm] = useState({
     employee_id: "",
@@ -72,6 +73,13 @@ function AddEmployeeModal({
 
   function handleSubmit(e) {
     e.preventDefault();
+
+    if (!navigator.onLine) {
+      alert(
+        "You are offline. Employee changes cannot be saved until you reconnect."
+      );
+      return;
+    }
 
     onSave({
       ...form,
@@ -159,6 +167,12 @@ function AddEmployeeModal({
             <input
               type="file"
               accept="image/*"
+              disabled={!isOnline}
+              title={
+                !isOnline
+                  ? "Reconnect to upload a photo"
+                  : undefined
+              }
               onChange={handlePhotoChange}
             />
 
@@ -190,6 +204,12 @@ function AddEmployeeModal({
             <button
               type="submit"
               className="add-btn"
+              disabled={!isOnline}
+              title={
+                !isOnline
+                  ? "Reconnect to save"
+                  : undefined
+              }
             >
               {item ? "Update Employee" : "Save Employee"}
             </button>

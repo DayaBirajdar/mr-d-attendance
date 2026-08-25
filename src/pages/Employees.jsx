@@ -2,6 +2,10 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { logActivity } from "../lib/activityLog";
+import {
+  readOfflineCache,
+  saveOfflineCache,
+} from "../lib/offlineCache";
 
 import EmployeeToolbar from "../components/employees/EmployeeToolbar";
 import EmployeeTable from "../components/employees/EmployeeTable";
@@ -13,6 +17,16 @@ function Employees() {
   const [showModal, setShowModal] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
 
+  const [isOnline, setIsOnline] = useState(
+    navigator.onLine
+  );
+
+  const [usingCachedData, setUsingCachedData] =
+    useState(false);
+
+  const [cacheSavedAt, setCacheSavedAt] =
+    useState(null);
+
   const [searchParams, setSearchParams] =
     useSearchParams();
 
@@ -23,6 +37,38 @@ function Employees() {
 
   useEffect(() => {
     loadEmployees();
+
+    function handleOnline() {
+      setIsOnline(true);
+      loadEmployees();
+    }
+
+    function handleOffline() {
+      setIsOnline(false);
+      loadCachedEmployees();
+    }
+
+    window.addEventListener(
+      "online",
+      handleOnline
+    );
+
+    window.addEventListener(
+      "offline",
+      handleOffline
+    );
+
+    return () => {
+      window.removeEventListener(
+        "online",
+        handleOnline
+      );
+
+      window.removeEventListener(
+        "offline",
+        handleOffline
+      );
+    };
   }, []);
 
   useEffect(() => {
@@ -68,7 +114,46 @@ function Employees() {
     employees,
   ]);
 
+  async function loadCachedEmployees() {
+    const cached =
+      await readOfflineCache(
+        "employees"
+      );
+
+    if (!cached) {
+      return false;
+    }
+
+    setEmployees(
+      cached.data || []
+    );
+
+    setUsingCachedData(true);
+
+    setCacheSavedAt(
+      cached.savedAt || null
+    );
+
+    return true;
+  }
+
   async function loadEmployees() {
+    if (!navigator.onLine) {
+      setIsOnline(false);
+
+      const foundCache =
+        await loadCachedEmployees();
+
+      if (!foundCache) {
+        setEmployees([]);
+        setUsingCachedData(false);
+      }
+
+      return;
+    }
+
+    setIsOnline(true);
+
     const { data, error } = await supabase
       .from("employees")
       .select("*")
@@ -77,13 +162,42 @@ function Employees() {
 
     if (error) {
       console.error(error);
+
+      const foundCache =
+        await loadCachedEmployees();
+
+      if (!foundCache) {
+        setEmployees([]);
+      }
+
       return;
     }
 
-    setEmployees(data || []);
+    const freshEmployees =
+      data || [];
+
+    setEmployees(freshEmployees);
+    setUsingCachedData(false);
+
+    const savedAt =
+      await saveOfflineCache(
+        "employees",
+        freshEmployees
+      );
+
+    setCacheSavedAt(
+      savedAt
+    );
   }
 
   async function handleSave(employee) {
+  if (!navigator.onLine) {
+    alert(
+      "You are offline. Employee changes cannot be saved until you reconnect."
+    );
+    return;
+  }
+
   let photoUrl = employee.photo_url || "";
 
   // Upload photo if selected
@@ -169,6 +283,13 @@ function Employees() {
 }
 
   async function handleDelete(id) {
+    if (!navigator.onLine) {
+      alert(
+        "You are offline. Employees cannot be deleted until you reconnect."
+      );
+      return;
+    }
+
     if (!window.confirm("Move this employee to Recycle Bin?")) return;
 
     const employee = employees.find((e) => e.id === id);
@@ -227,6 +348,13 @@ function Employees() {
   }
 
   function handleEdit(employee) {
+    if (!navigator.onLine) {
+      alert(
+        "You are offline. Employees cannot be edited until you reconnect."
+      );
+      return;
+    }
+
     setSelectedEmployee(employee);
     setShowModal(true);
   }
@@ -255,10 +383,49 @@ function Employees() {
         Manage all employees of the organization.
       </p>
 
+      {!isOnline && (
+        <div
+          style={{
+            marginBottom: "18px",
+            padding: "12px 16px",
+            borderRadius: "10px",
+            background: "#fff7ed",
+            border: "1px solid #fdba74",
+            color: "#9a3412",
+            fontWeight: "600",
+          }}
+        >
+          📡 Offline
+          {usingCachedData
+            ? " — showing last saved data"
+            : " — no saved Employee data is available"}
+
+          {usingCachedData &&
+            cacheSavedAt && (
+              <span
+                style={{
+                  fontWeight: "400",
+                  marginLeft: "8px",
+                }}
+              >
+                Last updated:{" "}
+                {new Date(
+                  cacheSavedAt
+                ).toLocaleString()}
+              </span>
+            )}
+        </div>
+      )}
+
       <EmployeeToolbar
         search={search}
         setSearch={setSearch}
+        isOnline={isOnline}
         onAdd={() => {
+          if (!isOnline) {
+            return;
+          }
+
           setSelectedEmployee(null);
           setShowModal(true);
         }}
@@ -305,6 +472,7 @@ function Employees() {
         focusedEmployeeId={focusedEmployeeId}
         onEdit={handleEdit}
         onDelete={handleDelete}
+        isOnline={isOnline}
       />
 
       {showModal && (
@@ -315,6 +483,7 @@ function Employees() {
             setSelectedEmployee(null);
           }}
           onSave={handleSave}
+          isOnline={isOnline}
         />
       )}
     </div>
