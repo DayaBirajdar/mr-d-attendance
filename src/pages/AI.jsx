@@ -1609,6 +1609,43 @@ function formatAttendanceClock(minutesValue) {
 
 
 function AI() {
+  const [isOnline, setIsOnline] =
+    useState(
+      navigator.onLine
+    );
+
+  useEffect(() => {
+    function handleOnline() {
+      setIsOnline(true);
+    }
+
+    function handleOffline() {
+      setIsOnline(false);
+    }
+
+    window.addEventListener(
+      "online",
+      handleOnline
+    );
+
+    window.addEventListener(
+      "offline",
+      handleOffline
+    );
+
+    return () => {
+      window.removeEventListener(
+        "online",
+        handleOnline
+      );
+
+      window.removeEventListener(
+        "offline",
+        handleOffline
+      );
+    };
+  }, []);
+
   const fileInputRef =
     useRef(null);
 
@@ -18596,6 +18633,22 @@ function tryLocalSpreadsheetAnswer(question) {
       );
 
     if (asksWeather) {
+      if (!navigator.onLine) {
+        setMessages(
+          (currentMessages) => [
+            ...currentMessages,
+            {
+              role: "assistant",
+              source: "system",
+              text:
+                "📡 You are offline. Live weather requires an internet connection. Reconnect and try again. No OpenAI credit was used.",
+            },
+          ]
+        );
+
+        return;
+      }
+
       setIsAiLoading(true);
 
       try {
@@ -18886,6 +18939,22 @@ function tryLocalSpreadsheetAnswer(question) {
     // PAID AI FALLBACK
     // ---------------------------------------------------------
 
+    if (!navigator.onLine) {
+      setMessages(
+        (current) => [
+          ...current,
+          {
+            role: "assistant",
+            source: "system",
+            text:
+              "📡 You are offline. This question requires Mr.D AI and cannot be processed until you reconnect. Local spreadsheet features remain available. No OpenAI credit was used.",
+          },
+        ]
+      );
+
+      return;
+    }
+
     setIsAiLoading(true);
 
     try {
@@ -19038,6 +19107,26 @@ function tryLocalSpreadsheetAnswer(question) {
         Excel files, attendance,
         leave, expenses and more.
       </p>
+
+
+      {!isOnline && (
+        <div
+          style={{
+            marginBottom: "18px",
+            padding: "12px 16px",
+            background: "#fff7ed",
+            border: "1px solid #fdba74",
+            borderRadius: "12px",
+            color: "#9a3412",
+            fontSize: "14px",
+            fontWeight: "700",
+            lineHeight: "1.5",
+          }}
+        >
+          📡 Offline — Local spreadsheet analysis is available.
+          Live weather and Mr.D AI require internet.
+        </div>
+      )}
 
 
       <input
