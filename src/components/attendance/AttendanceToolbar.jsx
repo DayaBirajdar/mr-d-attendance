@@ -2,6 +2,7 @@ function AttendanceToolbar({
   search,
   setSearch,
   onAdd,
+  isOnline = true,
 }) {
   return (
     <div
@@ -22,6 +23,18 @@ function AttendanceToolbar({
       <button
         className="add-btn"
         onClick={onAdd}
+        disabled={!isOnline}
+        title={
+          !isOnline
+            ? "Reconnect to add attendance"
+            : undefined
+        }
+        style={{
+          opacity: isOnline ? 1 : 0.5,
+          cursor: isOnline
+            ? "pointer"
+            : "not-allowed",
+        }}
       >
         + Add Attendance
       </button>

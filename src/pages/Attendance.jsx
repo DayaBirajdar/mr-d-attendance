@@ -2,6 +2,10 @@ import { loadFaceModels } from "../utils/faceRecognition";
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { logActivity } from "../lib/activityLog";
+import {
+  readOfflineCache,
+  saveOfflineCache,
+} from "../lib/offlineCache";
 
 import AttendanceToolbar from "../components/attendance/AttendanceToolbar";
 import AttendanceTable from "../components/attendance/AttendanceTable";
@@ -14,6 +18,16 @@ function Attendance() {
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [selectedAttendance, setSelectedAttendance] = useState(null);
+
+  const [isOnline, setIsOnline] = useState(
+    navigator.onLine
+  );
+
+  const [usingCachedData, setUsingCachedData] =
+    useState(false);
+
+  const [cacheSavedAt, setCacheSavedAt] =
+    useState(null);
 
   const [viewMode, setViewMode] = useState("daily");
 
@@ -34,13 +48,17 @@ function Attendance() {
 
   useEffect(() => {
     async function initialize() {
+      if (!navigator.onLine) {
+        setIsOnline(false);
+
+        await loadAllCachedAttendanceData();
+
+        return;
+      }
+
+      setIsOnline(true);
+
       try {
-        console.log("Loading AI Models...");
-
-        await loadFaceModels();
-
-        console.log("✅ Face Models Loaded Successfully");
-
         await Promise.all([
           loadAttendance(),
           loadAttendanceSettings(),
@@ -48,16 +66,179 @@ function Attendance() {
         ]);
       } catch (err) {
         console.error(
-          "❌ Attendance initialization error:",
+          "❌ Attendance data initialization error:",
+          err
+        );
+      }
+
+      try {
+        console.log(
+          "Loading AI Models..."
+        );
+
+        await loadFaceModels();
+
+        console.log(
+          "✅ Face Models Loaded Successfully"
+        );
+      } catch (err) {
+        console.error(
+          "❌ Face model initialization error:",
           err
         );
       }
     }
 
+    async function handleOnline() {
+      setIsOnline(true);
+
+      try {
+        await Promise.all([
+          loadAttendance(),
+          loadAttendanceSettings(),
+          loadEmployees(),
+        ]);
+      } catch (err) {
+        console.error(
+          "Attendance online refresh error:",
+          err
+        );
+      }
+
+      loadFaceModels().catch(
+        (err) => {
+          console.error(
+            "Face model reload error:",
+            err
+          );
+        }
+      );
+    }
+
+    function handleOffline() {
+      setIsOnline(false);
+
+      loadAllCachedAttendanceData();
+    }
+
     initialize();
+
+    window.addEventListener(
+      "online",
+      handleOnline
+    );
+
+    window.addEventListener(
+      "offline",
+      handleOffline
+    );
+
+    return () => {
+      window.removeEventListener(
+        "online",
+        handleOnline
+      );
+
+      window.removeEventListener(
+        "offline",
+        handleOffline
+      );
+    };
   }, []);
 
+  async function loadAllCachedAttendanceData() {
+    const [
+      attendanceCache,
+      employeesCache,
+      settingsCache,
+    ] = await Promise.all([
+      readOfflineCache(
+        "attendance"
+      ),
+      readOfflineCache(
+        "attendance-employees"
+      ),
+      readOfflineCache(
+        "attendance-settings"
+      ),
+    ]);
+
+    let foundCache = false;
+
+    if (attendanceCache) {
+      setAttendance(
+        attendanceCache.data || []
+      );
+
+      foundCache = true;
+    }
+
+    if (employeesCache) {
+      setEmployees(
+        employeesCache.data || []
+      );
+
+      foundCache = true;
+    }
+
+    if (
+      settingsCache &&
+      settingsCache.data?.[0]
+    ) {
+      setAttendanceSettings(
+        settingsCache.data[0]
+      );
+
+      foundCache = true;
+    }
+
+    const timestamps = [
+      attendanceCache?.savedAt,
+      employeesCache?.savedAt,
+      settingsCache?.savedAt,
+    ].filter(Boolean);
+
+    if (timestamps.length > 0) {
+      timestamps.sort();
+
+      setCacheSavedAt(
+        timestamps[
+          timestamps.length - 1
+        ]
+      );
+    }
+
+    setUsingCachedData(
+      foundCache
+    );
+
+    return foundCache;
+  }
+
   async function loadAttendanceSettings() {
+    if (!navigator.onLine) {
+      const cached =
+        await readOfflineCache(
+          "attendance-settings"
+        );
+
+      if (cached?.data?.[0]) {
+        setAttendanceSettings(
+          cached.data[0]
+        );
+
+        setUsingCachedData(true);
+
+        if (cached.savedAt) {
+          setCacheSavedAt(
+            cached.savedAt
+          );
+        }
+      }
+
+      return;
+    }
+
     const { data, error } = await supabase
       .from("attendance_settings")
       .select(`
@@ -80,6 +261,7 @@ function Attendance() {
         "Attendance settings load error:",
         error
       );
+
       return;
     }
 
@@ -87,31 +269,80 @@ function Attendance() {
       return;
     }
 
-    setAttendanceSettings({
+    const freshSettings = {
       office_start_time:
-        data.office_start_time?.slice(0, 5) || "10:00",
+        data.office_start_time
+          ?.slice(0, 5) ||
+        "10:00",
 
       office_end_time:
-        data.office_end_time?.slice(0, 5) || "19:00",
+        data.office_end_time
+          ?.slice(0, 5) ||
+        "19:00",
 
       grace_period_minutes:
-        Number(data.grace_period_minutes ?? 15),
+        Number(
+          data.grace_period_minutes ??
+          15
+        ),
 
       full_day_minutes:
-        Number(data.full_day_minutes ?? 480),
+        Number(
+          data.full_day_minutes ??
+          480
+        ),
 
       half_day_minutes:
-        Number(data.half_day_minutes ?? 240),
+        Number(
+          data.half_day_minutes ??
+          240
+        ),
 
       saturday_off:
-        Boolean(data.saturday_off),
+        Boolean(
+          data.saturday_off
+        ),
 
       sunday_off:
-        Boolean(data.sunday_off),
-    });
+        Boolean(
+          data.sunday_off
+        ),
+    };
+
+    setAttendanceSettings(
+      freshSettings
+    );
+
+    await saveOfflineCache(
+      "attendance-settings",
+      [freshSettings]
+    );
   }
 
   async function loadEmployees() {
+    if (!navigator.onLine) {
+      const cached =
+        await readOfflineCache(
+          "attendance-employees"
+        );
+
+      if (cached) {
+        setEmployees(
+          cached.data || []
+        );
+
+        setUsingCachedData(true);
+
+        if (cached.savedAt) {
+          setCacheSavedAt(
+            cached.savedAt
+          );
+        }
+      }
+
+      return;
+    }
+
     const { data, error } = await supabase
       .from("employees")
       .select(`
@@ -136,14 +367,52 @@ function Attendance() {
         "Employees load error:",
         error
       );
+
       return;
     }
 
-    setEmployees(data || []);
+    const freshEmployees =
+      data || [];
+
+    setEmployees(
+      freshEmployees
+    );
+
+    await saveOfflineCache(
+      "attendance-employees",
+      freshEmployees
+    );
   }
 
 
   async function loadAttendance() {
+    if (!navigator.onLine) {
+      setIsOnline(false);
+
+      const cached =
+        await readOfflineCache(
+          "attendance"
+        );
+
+      if (cached) {
+        setAttendance(
+          cached.data || []
+        );
+
+        setUsingCachedData(true);
+
+        if (cached.savedAt) {
+          setCacheSavedAt(
+            cached.savedAt
+          );
+        }
+      }
+
+      return;
+    }
+
+    setIsOnline(true);
+
     const { data, error } = await supabase
       .from("attendance")
       .select(`
@@ -174,13 +443,60 @@ function Attendance() {
 
     if (error) {
       console.error(error);
+
+      const cached =
+        await readOfflineCache(
+          "attendance"
+        );
+
+      if (cached) {
+        setAttendance(
+          cached.data || []
+        );
+
+        setUsingCachedData(true);
+
+        if (cached.savedAt) {
+          setCacheSavedAt(
+            cached.savedAt
+          );
+        }
+      }
+
       return;
     }
 
-    setAttendance(data || []);
+    const freshAttendance =
+      data || [];
+
+    setAttendance(
+      freshAttendance
+    );
+
+    setUsingCachedData(false);
+
+    const savedAt =
+      await saveOfflineCache(
+        "attendance",
+        freshAttendance
+      );
+
+    if (savedAt) {
+      setCacheSavedAt(
+        savedAt
+      );
+    }
   }
 
   async function handleSave(record) {
+    if (!navigator.onLine) {
+      alert(
+        "You are offline. Attendance changes cannot be saved until you reconnect."
+      );
+
+      return;
+    }
+
     // Preserve existing selfie when editing.
     // Replace it only when a new verified selfie is captured.
     let selfieUrl =
@@ -346,6 +662,14 @@ function Attendance() {
   }
 
   async function handleDelete(id) {
+    if (!navigator.onLine) {
+      alert(
+        "You are offline. Attendance records cannot be deleted until you reconnect."
+      );
+
+      return;
+    }
+
     if (
       !window.confirm(
         "Move this attendance record to Recycle Bin?"
@@ -458,6 +782,14 @@ function Attendance() {
   }
 
   function handleEdit(record) {
+    if (!navigator.onLine) {
+      alert(
+        "You are offline. Attendance records cannot be edited until you reconnect."
+      );
+
+      return;
+    }
+
     setSelectedAttendance(
       record
     );
@@ -764,6 +1096,41 @@ function Attendance() {
         Manage employee attendance records.
       </p>
 
+      {!isOnline && (
+        <div
+          style={{
+            marginBottom: "18px",
+            padding: "12px 16px",
+            borderRadius: "10px",
+            background: "#fff7ed",
+            border:
+              "1px solid #fdba74",
+            color: "#9a3412",
+            fontWeight: "600",
+          }}
+        >
+          📡 Offline
+          {usingCachedData
+            ? " — showing last saved attendance data"
+            : " — no saved Attendance data is available"}
+
+          {usingCachedData &&
+            cacheSavedAt && (
+              <span
+                style={{
+                  fontWeight: "400",
+                  marginLeft: "8px",
+                }}
+              >
+                Last updated:{" "}
+                {new Date(
+                  cacheSavedAt
+                ).toLocaleString()}
+              </span>
+            )}
+        </div>
+      )}
+
       <div
         style={{
           display: "flex",
@@ -838,7 +1205,12 @@ function Attendance() {
       <AttendanceToolbar
         search={search}
         setSearch={setSearch}
+        isOnline={isOnline}
         onAdd={() => {
+          if (!isOnline) {
+            return;
+          }
+
           setSelectedAttendance(
             null
           );
@@ -947,6 +1319,9 @@ function Attendance() {
             }
             onDelete={
               handleDelete
+            }
+            isOnline={
+              isOnline
             }
           />
         </>
@@ -1062,6 +1437,9 @@ function Attendance() {
           }}
           onSave={
             handleSave
+          }
+          isOnline={
+            isOnline
           }
         />
       )}

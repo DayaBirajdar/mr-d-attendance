@@ -18,6 +18,7 @@ function AddAttendanceModal({
   item,
   onClose,
   onSave,
+  isOnline = true,
 }) {
 
   // ---------------------------------------------------------
@@ -751,6 +752,16 @@ setMatchMessage(
 
     e.preventDefault();
 
+    if (!navigator.onLine) {
+
+      alert(
+        "You are offline. Attendance changes cannot be saved until you reconnect."
+      );
+
+      return;
+
+    }
+
 
     // Cannot submit while verifying
 
@@ -1086,7 +1097,8 @@ setMatchMessage(
                   openCamera
                 }
                 disabled={
-                  isVerifying
+                  isVerifying ||
+                  !isOnline
                 }
               >
 
@@ -1202,7 +1214,8 @@ setMatchMessage(
                   }
                   disabled={
                     !cameraReady ||
-                    isVerifying
+                    isVerifying ||
+                    !isOnline
                   }
                 >
 
@@ -1317,6 +1330,7 @@ setMatchMessage(
               type="submit"
               className="add-btn"
               disabled={
+                !isOnline ||
                 isVerifying ||
                 ((!item || Boolean(selfieFile)) && !faceMatched)
               }

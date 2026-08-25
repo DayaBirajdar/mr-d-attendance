@@ -4,6 +4,7 @@ function AttendanceTable({
   attendance,
   onEdit,
   onDelete,
+  isOnline = true,
 }) {
   const [previewImage, setPreviewImage] = useState(null);
 
@@ -178,6 +179,20 @@ function AttendanceTable({
                 <td>
                   <button
                     className="edit-btn"
+                    disabled={!isOnline}
+                    title={
+                      !isOnline
+                        ? "Reconnect to edit attendance"
+                        : "Edit"
+                    }
+                    style={{
+                      opacity: isOnline
+                        ? 1
+                        : 0.5,
+                      cursor: isOnline
+                        ? "pointer"
+                        : "not-allowed",
+                    }}
                     onClick={() => onEdit(item)}
                   >
                     Edit
@@ -185,8 +200,20 @@ function AttendanceTable({
 
                   <button
                     className="delete-btn"
+                    disabled={!isOnline}
+                    title={
+                      !isOnline
+                        ? "Reconnect to delete attendance"
+                        : "Delete"
+                    }
                     style={{
                       marginLeft: "10px",
+                      opacity: isOnline
+                        ? 1
+                        : 0.5,
+                      cursor: isOnline
+                        ? "pointer"
+                        : "not-allowed",
                     }}
                     onClick={() =>
                       onDelete(item.id)
