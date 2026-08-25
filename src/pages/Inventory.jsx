@@ -3,6 +3,10 @@ import { useSearchParams } from "react-router-dom";
 import "../styles/Inventory.css";
 import { supabase } from "../lib/supabase";
 import { logActivity } from "../lib/activityLog";
+import {
+  readOfflineCache,
+  saveOfflineCache,
+} from "../lib/offlineCache";
 
 import InventoryToolbar from "../components/inventory/InventoryToolbar";
 import InventoryTable from "../components/inventory/InventoryTable";
@@ -14,6 +18,16 @@ function Inventory() {
   const [showModal, setShowModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
 
+  const [isOnline, setIsOnline] = useState(
+    navigator.onLine
+  );
+
+  const [usingCachedData, setUsingCachedData] =
+    useState(false);
+
+  const [cacheSavedAt, setCacheSavedAt] =
+    useState(null);
+
   const [searchParams, setSearchParams] =
     useSearchParams();
 
@@ -24,6 +38,38 @@ function Inventory() {
 
   useEffect(() => {
     loadInventory();
+
+    function handleOnline() {
+      setIsOnline(true);
+      loadInventory();
+    }
+
+    function handleOffline() {
+      setIsOnline(false);
+      loadCachedInventory();
+    }
+
+    window.addEventListener(
+      "online",
+      handleOnline
+    );
+
+    window.addEventListener(
+      "offline",
+      handleOffline
+    );
+
+    return () => {
+      window.removeEventListener(
+        "online",
+        handleOnline
+      );
+
+      window.removeEventListener(
+        "offline",
+        handleOffline
+      );
+    };
   }, []);
 
   useEffect(() => {
@@ -31,6 +77,21 @@ function Inventory() {
       searchParams.get("action") ===
       "add"
     ) {
+      if (!navigator.onLine) {
+        alert(
+          "You are offline. Adding inventory is unavailable until you reconnect."
+        );
+
+        setSearchParams(
+          {},
+          {
+            replace: true,
+          }
+        );
+
+        return;
+      }
+
       setSelectedItem(null);
       setShowModal(true);
 
@@ -88,7 +149,46 @@ function Inventory() {
   ]);
 
 
+  async function loadCachedInventory() {
+    const cached =
+      await readOfflineCache(
+        "inventory"
+      );
+
+    if (!cached) {
+      return false;
+    }
+
+    setItems(
+      cached.data || []
+    );
+
+    setUsingCachedData(true);
+
+    setCacheSavedAt(
+      cached.savedAt || null
+    );
+
+    return true;
+  }
+
   async function loadInventory() {
+    if (!navigator.onLine) {
+      setIsOnline(false);
+
+      const foundCache =
+        await loadCachedInventory();
+
+      if (!foundCache) {
+        setItems([]);
+        setUsingCachedData(false);
+      }
+
+      return;
+    }
+
+    setIsOnline(true);
+
     const { data, error } = await supabase
       .from("inventory")
       .select("*")
@@ -96,13 +196,42 @@ function Inventory() {
 
     if (error) {
       console.error(error);
+
+      const foundCache =
+        await loadCachedInventory();
+
+      if (!foundCache) {
+        setItems([]);
+      }
+
       return;
     }
 
-    setItems(data || []);
+    const freshItems =
+      data || [];
+
+    setItems(freshItems);
+    setUsingCachedData(false);
+
+    const savedAt =
+      await saveOfflineCache(
+        "inventory",
+        freshItems
+      );
+
+    setCacheSavedAt(
+      savedAt
+    );
   }
 
   async function handleSave(item) {
+    if (!navigator.onLine) {
+      alert(
+        "You are offline. Inventory changes cannot be saved until you reconnect."
+      );
+      return;
+    }
+
     let error;
 
     if (selectedItem) {
@@ -141,6 +270,13 @@ function Inventory() {
   }
 
   async function handleDelete(id) {
+    if (!navigator.onLine) {
+      alert(
+        "You are offline. Inventory items cannot be deleted until you reconnect."
+      );
+      return;
+    }
+
     const confirmDelete = window.confirm(
       "Move this item to Recycle Bin?"
     );
@@ -206,6 +342,13 @@ function Inventory() {
   }
 
   function handleEdit(item) {
+    if (!navigator.onLine) {
+      alert(
+        "You are offline. Inventory items cannot be edited until you reconnect."
+      );
+      return;
+    }
+
     setSelectedItem(item);
     setShowModal(true);
   }
@@ -248,10 +391,49 @@ function Inventory() {
         Manage all company assets and equipment.
       </p>
 
+      {!isOnline && (
+        <div
+          style={{
+            marginBottom: "18px",
+            padding: "12px 16px",
+            borderRadius: "10px",
+            background: "#fff7ed",
+            border: "1px solid #fdba74",
+            color: "#9a3412",
+            fontWeight: "600",
+          }}
+        >
+          📡 Offline
+          {usingCachedData
+            ? " — showing last saved data"
+            : " — no saved Inventory data is available"}
+
+          {usingCachedData &&
+            cacheSavedAt && (
+              <span
+                style={{
+                  fontWeight: "400",
+                  marginLeft: "8px",
+                }}
+              >
+                Last updated:{" "}
+                {new Date(
+                  cacheSavedAt
+                ).toLocaleString()}
+              </span>
+            )}
+        </div>
+      )}
+
       <InventoryToolbar
         search={search}
         setSearch={setSearch}
+        isOnline={isOnline}
         onAdd={() => {
+          if (!isOnline) {
+            return;
+          }
+
           setSelectedItem(null);
           setShowModal(true);
         }}
@@ -268,6 +450,7 @@ function Inventory() {
         getStatusClass={getStatusClass}
         onEdit={handleEdit}
         onDelete={handleDelete}
+        isOnline={isOnline}
       />
 
       {showModal && (

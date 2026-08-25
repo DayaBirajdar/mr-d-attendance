@@ -4,6 +4,7 @@ function InventoryTable({
   getStatusClass,
   onEdit,
   onDelete,
+  isOnline = true,
 }) {
   return (
     <table className="inventory-table">
@@ -57,6 +58,20 @@ function InventoryTable({
 
               <button
                 className="action-btn edit-btn"
+                disabled={!isOnline}
+                title={
+                  !isOnline
+                    ? "Reconnect to edit"
+                    : "Edit"
+                }
+                style={{
+                  opacity: isOnline
+                    ? 1
+                    : 0.5,
+                  cursor: isOnline
+                    ? "pointer"
+                    : "not-allowed",
+                }}
                 onClick={() => onEdit(item)}
               >
                 ✏️
@@ -64,6 +79,20 @@ function InventoryTable({
 
               <button
                 className="action-btn delete-btn"
+                disabled={!isOnline}
+                title={
+                  !isOnline
+                    ? "Reconnect to delete"
+                    : "Delete"
+                }
+                style={{
+                  opacity: isOnline
+                    ? 1
+                    : 0.5,
+                  cursor: isOnline
+                    ? "pointer"
+                    : "not-allowed",
+                }}
                 onClick={() => onDelete(item.id)}
               >
                 🗑️
