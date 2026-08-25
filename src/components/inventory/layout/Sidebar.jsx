@@ -25,6 +25,31 @@ function Sidebar() {
 
   async function handleLogout() {
 
+    const {
+      data: { session },
+    } =
+      await supabase.auth.getSession();
+
+    const userId =
+      session?.user?.id;
+
+    if (userId) {
+      const cachePrefix =
+        `mrd-cache:${userId}:`;
+
+      Object.keys(localStorage)
+        .filter((key) =>
+          key.startsWith(
+            cachePrefix
+          )
+        )
+        .forEach((key) =>
+          localStorage.removeItem(
+            key
+          )
+        );
+    }
+
     const { error } =
       await supabase.auth.signOut();
 
