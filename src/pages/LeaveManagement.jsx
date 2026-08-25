@@ -6,6 +6,10 @@ import {
 
 import { supabase } from "../lib/supabase";
 import { logActivity } from "../lib/activityLog";
+import {
+  readOfflineCache,
+  saveOfflineCache,
+} from "../lib/offlineCache";
 
 
 function LeaveManagement() {
@@ -44,6 +48,21 @@ function LeaveManagement() {
   const [saving, setSaving] =
     useState(false);
 
+  const [isOnline, setIsOnline] =
+    useState(
+      navigator.onLine
+    );
+
+  const [
+    usingCachedData,
+    setUsingCachedData,
+  ] = useState(false);
+
+  const [
+    cacheSavedAt,
+    setCacheSavedAt,
+  ] = useState(null);
+
   const [showForm, setShowForm] =
     useState(false);
 
@@ -59,6 +78,38 @@ function LeaveManagement() {
 
   useEffect(() => {
     loadPage();
+
+    function handleOnline() {
+      setIsOnline(true);
+      loadPage();
+    }
+
+    function handleOffline() {
+      setIsOnline(false);
+      loadCachedLeaveData();
+    }
+
+    window.addEventListener(
+      "online",
+      handleOnline
+    );
+
+    window.addEventListener(
+      "offline",
+      handleOffline
+    );
+
+    return () => {
+      window.removeEventListener(
+        "online",
+        handleOnline
+      );
+
+      window.removeEventListener(
+        "offline",
+        handleOffline
+      );
+    };
   }, []);
 
 
@@ -66,7 +117,96 @@ function LeaveManagement() {
   // LOAD PAGE
   // ---------------------------------------------------------
 
+  async function loadCachedLeaveData() {
+    const [
+      requestsCache,
+      leaveTypesCache,
+      employeesCache,
+      settingsCache,
+    ] = await Promise.all([
+      readOfflineCache(
+        "leave-requests"
+      ),
+      readOfflineCache(
+        "leave-types"
+      ),
+      readOfflineCache(
+        "leave-employees"
+      ),
+      readOfflineCache(
+        "leave-settings"
+      ),
+    ]);
+
+    let foundCache = false;
+
+    if (requestsCache) {
+      setRequests(
+        requestsCache.data || []
+      );
+      foundCache = true;
+    }
+
+    if (leaveTypesCache) {
+      setLeaveTypes(
+        leaveTypesCache.data || []
+      );
+      foundCache = true;
+    }
+
+    if (employeesCache) {
+      setEmployees(
+        employeesCache.data || []
+      );
+      foundCache = true;
+    }
+
+    if (
+      settingsCache?.data?.[0]
+    ) {
+      setAttendanceSettings(
+        settingsCache.data[0]
+      );
+      foundCache = true;
+    }
+
+    const timestamps = [
+      requestsCache?.savedAt,
+      leaveTypesCache?.savedAt,
+      employeesCache?.savedAt,
+      settingsCache?.savedAt,
+    ].filter(Boolean);
+
+    if (timestamps.length > 0) {
+      timestamps.sort();
+
+      setCacheSavedAt(
+        timestamps[
+          timestamps.length - 1
+        ]
+      );
+    }
+
+    setUsingCachedData(
+      foundCache
+    );
+
+    setLoading(false);
+
+    return foundCache;
+  }
+
+
   async function loadPage() {
+    if (!navigator.onLine) {
+      setIsOnline(false);
+
+      await loadCachedLeaveData();
+
+      return;
+    }
+
+    setIsOnline(true);
     setLoading(true);
 
     const [
@@ -199,26 +339,47 @@ function LeaveManagement() {
     }
 
 
+    const freshRequests =
+      requestsResult.data || [];
+
     setRequests(
-      requestsResult.data ||
-        []
+      freshRequests
     );
+
+    await saveOfflineCache(
+      "leave-requests",
+      freshRequests
+    );
+
+    const freshLeaveTypes =
+      leaveTypesResult.data || [];
 
     setLeaveTypes(
-      leaveTypesResult.data ||
-        []
+      freshLeaveTypes
     );
 
+    await saveOfflineCache(
+      "leave-types",
+      freshLeaveTypes
+    );
+
+    const freshEmployees =
+      employeesResult.data || [];
+
     setEmployees(
-      employeesResult.data ||
-        []
+      freshEmployees
+    );
+
+    await saveOfflineCache(
+      "leave-employees",
+      freshEmployees
     );
 
 
     if (
       settingsResult.data
     ) {
-      setAttendanceSettings({
+      const freshSettings = {
         saturday_off:
           settingsResult.data
             .saturday_off ??
@@ -228,9 +389,49 @@ function LeaveManagement() {
           settingsResult.data
             .sunday_off ??
           true,
-      });
+      };
+
+      setAttendanceSettings(
+        freshSettings
+      );
+
+      await saveOfflineCache(
+        "leave-settings",
+        [freshSettings]
+      );
     }
 
+
+    setUsingCachedData(false);
+
+    const cacheTimes = [
+      await readOfflineCache(
+        "leave-requests"
+      ),
+      await readOfflineCache(
+        "leave-types"
+      ),
+      await readOfflineCache(
+        "leave-employees"
+      ),
+      await readOfflineCache(
+        "leave-settings"
+      ),
+    ]
+      .map(
+        (item) =>
+          item?.savedAt
+      )
+      .filter(Boolean)
+      .sort();
+
+    if (cacheTimes.length > 0) {
+      setCacheSavedAt(
+        cacheTimes[
+          cacheTimes.length - 1
+        ]
+      );
+    }
 
     setLoading(false);
   }
@@ -851,6 +1052,14 @@ function LeaveManagement() {
   ) {
     e.preventDefault();
 
+    if (!navigator.onLine) {
+      alert(
+        "You are offline. Leave requests cannot be submitted until you reconnect."
+      );
+
+      return;
+    }
+
 
     if (
       !form.employee_id ||
@@ -1135,6 +1344,14 @@ function LeaveManagement() {
     request,
     status
   ) {
+    if (!navigator.onLine) {
+      alert(
+        "You are offline. Leave requests cannot be approved or rejected until you reconnect."
+      );
+
+      return;
+    }
+
     const action =
       status ===
       "Approved"
@@ -1468,13 +1685,31 @@ function LeaveManagement() {
         <button
           type="button"
 
-          onClick={() =>
-            setShowForm(
-              !showForm
-            )
+          disabled={!isOnline}
+
+          title={
+            !isOnline
+              ? "Reconnect to add leave request"
+              : undefined
           }
 
-          style={primaryButton}
+          onClick={() => {
+            if (!isOnline) {
+              return;
+            }
+
+            setShowForm(
+              !showForm
+            );
+          }}
+
+          style={{
+            ...primaryButton,
+            opacity: isOnline ? 1 : 0.5,
+            cursor: isOnline
+              ? "pointer"
+              : "not-allowed",
+          }}
         >
           {showForm
             ? "Cancel"
@@ -1482,6 +1717,41 @@ function LeaveManagement() {
         </button>
 
       </div>
+
+
+      {!isOnline && (
+        <div
+          style={{
+            marginBottom: "20px",
+            padding: "12px 16px",
+            borderRadius: "10px",
+            background: "#fff7ed",
+            border: "1px solid #fdba74",
+            color: "#9a3412",
+            fontWeight: "600",
+          }}
+        >
+          📡 Offline
+          {usingCachedData
+            ? " — showing last saved leave data"
+            : " — no saved Leave Management data is available"}
+
+          {usingCachedData &&
+            cacheSavedAt && (
+              <span
+                style={{
+                  fontWeight: "400",
+                  marginLeft: "8px",
+                }}
+              >
+                Last updated:{" "}
+                {new Date(
+                  cacheSavedAt
+                ).toLocaleString()}
+              </span>
+            )}
+        </div>
+      )}
 
 
       {/* YEAR FILTER */}
@@ -1925,7 +2195,14 @@ function LeaveManagement() {
             type="submit"
 
             disabled={
-              saving
+              saving ||
+              !isOnline
+            }
+
+            title={
+              !isOnline
+                ? "Reconnect to submit leave request"
+                : undefined
             }
 
             style={{
@@ -1935,12 +2212,14 @@ function LeaveManagement() {
                 "20px",
 
               opacity:
-                saving
+                saving ||
+                !isOnline
                   ? 0.7
                   : 1,
 
               cursor:
-                saving
+                saving ||
+                !isOnline
                   ? "not-allowed"
                   : "pointer",
             }}
@@ -2314,6 +2593,14 @@ function LeaveManagement() {
                             <button
                               type="button"
 
+                              disabled={!isOnline}
+
+                              title={
+                                !isOnline
+                                  ? "Reconnect to approve"
+                                  : undefined
+                              }
+
                               onClick={() =>
                                 updateStatus(
                                   item,
@@ -2321,7 +2608,15 @@ function LeaveManagement() {
                                 )
                               }
 
-                              style={successButton}
+                              style={{
+                                ...successButton,
+                                opacity: isOnline
+                                  ? 1
+                                  : 0.5,
+                                cursor: isOnline
+                                  ? "pointer"
+                                  : "not-allowed",
+                              }}
                             >
                               Approve
                             </button>
@@ -2330,6 +2625,14 @@ function LeaveManagement() {
                             <button
                               type="button"
 
+                              disabled={!isOnline}
+
+                              title={
+                                !isOnline
+                                  ? "Reconnect to reject"
+                                  : undefined
+                              }
+
                               onClick={() =>
                                 updateStatus(
                                   item,
@@ -2337,7 +2640,15 @@ function LeaveManagement() {
                                 )
                               }
 
-                              style={dangerButton}
+                              style={{
+                                ...dangerButton,
+                                opacity: isOnline
+                                  ? 1
+                                  : 0.5,
+                                cursor: isOnline
+                                  ? "pointer"
+                                  : "not-allowed",
+                              }}
                             >
                               Reject
                             </button>
