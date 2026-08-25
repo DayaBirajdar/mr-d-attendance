@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import {
+  readOfflineCache,
+  saveOfflineCache,
+} from "../lib/offlineCache";
 
 import DashboardCard from "../components/dashboard/DashboardCard";
 import RecentActivity from "../components/dashboard/RecentActivity";
@@ -37,6 +41,21 @@ function Dashboard() {
   const [recentActivities, setRecentActivities] =
     useState([]);
 
+  const [isOnline, setIsOnline] =
+    useState(
+      navigator.onLine
+    );
+
+  const [
+    usingCachedData,
+    setUsingCachedData,
+  ] = useState(false);
+
+  const [
+    cacheSavedAt,
+    setCacheSavedAt,
+  ] = useState(null);
+
   useEffect(() => {
     loadDashboard();
     loadWeather();
@@ -55,10 +74,38 @@ function Dashboard() {
     const weatherTimer =
       setInterval(
         () => {
-          loadWeather();
+          if (
+            navigator.onLine
+          ) {
+            loadWeather();
+          }
         },
         15 * 60 * 1000
       );
+
+    function handleOnline() {
+      setIsOnline(true);
+
+      loadDashboard();
+      loadWeather();
+      loadRecentActivities();
+    }
+
+    function handleOffline() {
+      setIsOnline(false);
+
+      loadCachedDashboardData();
+    }
+
+    window.addEventListener(
+      "online",
+      handleOnline
+    );
+
+    window.addEventListener(
+      "offline",
+      handleOffline
+    );
 
     return () => {
       clearInterval(
@@ -68,10 +115,126 @@ function Dashboard() {
       clearInterval(
         weatherTimer
       );
+
+      window.removeEventListener(
+        "online",
+        handleOnline
+      );
+
+      window.removeEventListener(
+        "offline",
+        handleOffline
+      );
     };
   }, []);
 
+  async function loadCachedDashboardData() {
+    const [
+      statsCache,
+      activitiesCache,
+      weatherCache,
+    ] = await Promise.all([
+      readOfflineCache(
+        "dashboard-stats"
+      ),
+      readOfflineCache(
+        "dashboard-activities"
+      ),
+      readOfflineCache(
+        "dashboard-weather"
+      ),
+    ]);
+
+    let foundCache = false;
+
+    if (
+      statsCache?.data?.[0]
+    ) {
+      setStats(
+        statsCache.data[0]
+      );
+
+      foundCache = true;
+    }
+
+    if (activitiesCache) {
+      setRecentActivities(
+        activitiesCache.data || []
+      );
+
+      foundCache = true;
+    }
+
+    if (
+      weatherCache?.data?.[0]
+    ) {
+      setWeather(
+        weatherCache.data[0]
+      );
+
+      setWeatherError(false);
+
+      foundCache = true;
+    } else {
+      setWeatherError(true);
+    }
+
+    const timestamps = [
+      statsCache?.savedAt,
+      activitiesCache?.savedAt,
+      weatherCache?.savedAt,
+    ].filter(Boolean);
+
+    if (timestamps.length > 0) {
+      timestamps.sort();
+
+      setCacheSavedAt(
+        timestamps[
+          timestamps.length - 1
+        ]
+      );
+    }
+
+    setUsingCachedData(
+      foundCache
+    );
+
+    return foundCache;
+  }
+
+
   async function loadWeather() {
+    if (!navigator.onLine) {
+      setIsOnline(false);
+
+      const cached =
+        await readOfflineCache(
+          "dashboard-weather"
+        );
+
+      if (
+        cached?.data?.[0]
+      ) {
+        setWeather(
+          cached.data[0]
+        );
+
+        setWeatherError(false);
+
+        setUsingCachedData(true);
+
+        if (cached.savedAt) {
+          setCacheSavedAt(
+            cached.savedAt
+          );
+        }
+      } else {
+        setWeatherError(true);
+      }
+
+      return;
+    }
+
     try {
       const response =
         await fetch(
@@ -144,7 +307,7 @@ function Dashboard() {
           return "Weather";
         })();
 
-      setWeather({
+      const freshWeather = {
         temperature:
           current.temperature_2m,
         feelsLike:
@@ -152,9 +315,18 @@ function Dashboard() {
         humidity:
           current.relative_humidity_2m,
         condition,
-      });
+      };
+
+      setWeather(
+        freshWeather
+      );
 
       setWeatherError(false);
+
+      await saveOfflineCache(
+        "dashboard-weather",
+        [freshWeather]
+      );
     } catch (error) {
       console.error(
         "Dashboard weather error:",
@@ -166,6 +338,35 @@ function Dashboard() {
   }
 
   async function loadDashboard() {
+    if (!navigator.onLine) {
+      setIsOnline(false);
+
+      const cached =
+        await readOfflineCache(
+          "dashboard-stats"
+        );
+
+      if (
+        cached?.data?.[0]
+      ) {
+        setStats(
+          cached.data[0]
+        );
+
+        setUsingCachedData(true);
+
+        if (cached.savedAt) {
+          setCacheSavedAt(
+            cached.savedAt
+          );
+        }
+      }
+
+      return;
+    }
+
+    setIsOnline(true);
+
     const [
       inventory,
       expenses,
@@ -232,20 +433,77 @@ function Dashboard() {
         return diff >= 0 && diff <= 30;
       }).length || 0;
 
-    setStats({
-      inventory: inventory.count || 0,
-      expenses: expenses.count || 0,
-      events: events.count || 0,
-      vendors: vendors.count || 0,
-      documents: documents.count || 0,
-      visitors: visitors.count || 0,
-      renewals: renewals.count || 0,
+    const freshStats = {
+      inventory:
+        inventory.count || 0,
+
+      expenses:
+        expenses.count || 0,
+
+      events:
+        events.count || 0,
+
+      vendors:
+        vendors.count || 0,
+
+      documents:
+        documents.count || 0,
+
+      visitors:
+        visitors.count || 0,
+
+      renewals:
+        renewals.count || 0,
+
       expiredRenewals,
       dueRenewals,
-    });
+    };
+
+    setStats(
+      freshStats
+    );
+
+    setUsingCachedData(false);
+
+    const savedAt =
+      await saveOfflineCache(
+        "dashboard-stats",
+        [freshStats]
+      );
+
+    if (savedAt) {
+      setCacheSavedAt(
+        savedAt
+      );
+    }
   }
 
   async function loadRecentActivities() {
+    if (!navigator.onLine) {
+      setIsOnline(false);
+
+      const cached =
+        await readOfflineCache(
+          "dashboard-activities"
+        );
+
+      if (cached) {
+        setRecentActivities(
+          cached.data || []
+        );
+
+        setUsingCachedData(true);
+
+        if (cached.savedAt) {
+          setCacheSavedAt(
+            cached.savedAt
+          );
+        }
+      }
+
+      return;
+    }
+
     const { data, error } = await supabase
       .from("activity_log")
       .select("*")
@@ -339,11 +597,53 @@ function Dashboard() {
         time: getTimeLabel(item.created_at),
       }));
 
-    setRecentActivities(formatted);
+    setRecentActivities(
+      formatted
+    );
+
+    await saveOfflineCache(
+      "dashboard-activities",
+      formatted
+    );
   }
 
   return (
     <div className="dashboard-page">
+
+      {!isOnline && (
+        <div
+          style={{
+            marginBottom: "18px",
+            padding: "12px 16px",
+            borderRadius: "10px",
+            background: "#fff7ed",
+            border: "1px solid #fdba74",
+            color: "#9a3412",
+            fontWeight: "600",
+          }}
+        >
+          📡 Offline
+          {usingCachedData
+            ? " — showing last saved Dashboard data"
+            : " — no saved Dashboard data is available"}
+
+          {usingCachedData &&
+            cacheSavedAt && (
+              <span
+                style={{
+                  fontWeight: "400",
+                  marginLeft: "8px",
+                }}
+              >
+                Last updated:{" "}
+                {new Date(
+                  cacheSavedAt
+                ).toLocaleString()}
+              </span>
+            )}
+        </div>
+      )}
+
       <div className="dashboard-header">
         <div className="dashboard-heading">
           <h1>Operations Dashboard</h1>
@@ -473,9 +773,13 @@ function Dashboard() {
         </div>
       </div>
 
-      <AIBriefing />
+      <AIBriefing
+        isOnline={isOnline}
+      />
 
-<OperationsAlerts />
+<OperationsAlerts
+  isOnline={isOnline}
+/>
 
 <BusinessOverview stats={stats} />
 

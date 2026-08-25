@@ -1,14 +1,24 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 
-function OperationsAlerts() {
+function OperationsAlerts({
+  isOnline = true,
+}) {
   const [alerts, setAlerts] = useState([]);
 
   useEffect(() => {
+    if (!isOnline) {
+      return;
+    }
+
     loadAlerts();
-  }, []);
+  }, [isOnline]);
 
   async function loadAlerts() {
+    if (!navigator.onLine) {
+      return;
+    }
+
     const [
       renewalsResult,
       eventsResult,

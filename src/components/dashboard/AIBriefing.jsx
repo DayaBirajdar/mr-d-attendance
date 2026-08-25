@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 
-function AIBriefing() {
+function AIBriefing({
+  isOnline = true,
+}) {
   const [summary, setSummary] = useState({
     inventory: 0,
     expenses: 0,
@@ -14,10 +16,18 @@ function AIBriefing() {
   });
 
   useEffect(() => {
+    if (!isOnline) {
+      return;
+    }
+
     loadSummary();
-  }, []);
+  }, [isOnline]);
 
   async function loadSummary() {
+    if (!navigator.onLine) {
+      return;
+    }
+
     const today = new Date().toISOString().slice(0, 10);
 
     const [
