@@ -2,6 +2,10 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { logActivity } from "../lib/activityLog";
+import {
+  readOfflineCache,
+  saveOfflineCache,
+} from "../lib/offlineCache";
 
 import AddVisitorModal from "../components/visitors/AddVisitorModal";
 
@@ -10,6 +14,16 @@ function Visitors() {
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [selectedVisitor, setSelectedVisitor] = useState(null);
+
+  const [isOnline, setIsOnline] = useState(
+    navigator.onLine
+  );
+
+  const [usingCachedData, setUsingCachedData] =
+    useState(false);
+
+  const [cacheSavedAt, setCacheSavedAt] =
+    useState(null);
 
   const [searchParams, setSearchParams] =
     useSearchParams();
@@ -21,17 +35,62 @@ function Visitors() {
 
 
   useEffect(() => {
-  loadVisitors();
+    loadVisitors();
 
-  const interval = setInterval(() => {
-    setVisitors((prev) => [...prev]);
-  }, 60000);
+    function handleOnline() {
+      setIsOnline(true);
+      loadVisitors();
+    }
 
-  return () => clearInterval(interval);
-}, []);
+    function handleOffline() {
+      setIsOnline(false);
+      loadCachedVisitors();
+    }
+
+    window.addEventListener(
+      "online",
+      handleOnline
+    );
+
+    window.addEventListener(
+      "offline",
+      handleOffline
+    );
+
+    const interval = setInterval(() => {
+      setVisitors((prev) => [...prev]);
+    }, 60000);
+
+    return () => {
+      window.removeEventListener(
+        "online",
+        handleOnline
+      );
+
+      window.removeEventListener(
+        "offline",
+        handleOffline
+      );
+
+      clearInterval(interval);
+    };
+  }, []);
 
   useEffect(() => {
     if (searchParams.get("action") === "add") {
+      if (!navigator.onLine) {
+        alert(
+          "You are offline. Visitor check-in is unavailable until you reconnect."
+        );
+
+        setSearchParams(
+          {},
+          { replace: true }
+        );
+
+        return;
+      }
+
       setSelectedVisitor(null);
       setShowModal(true);
 
@@ -87,22 +146,90 @@ function Visitors() {
     visitors,
   ]);
 
-  async function loadVisitors() {
-    const { data, error } = await supabase
-      .from("visitors")
-.select("*")
-.eq("is_deleted", false)
-.order("check_in", { ascending: false });
+  async function loadCachedVisitors() {
+    const cached =
+      await readOfflineCache(
+        "visitors"
+      );
 
-    if (error) {
-      console.error(error);
+    if (!cached) {
+      return false;
+    }
+
+    setVisitors(
+      cached.data || []
+    );
+
+    setUsingCachedData(true);
+
+    setCacheSavedAt(
+      cached.savedAt || null
+    );
+
+    return true;
+  }
+
+  async function loadVisitors() {
+    if (!navigator.onLine) {
+      setIsOnline(false);
+
+      const foundCache =
+        await loadCachedVisitors();
+
+      if (!foundCache) {
+        setVisitors([]);
+        setUsingCachedData(false);
+      }
+
       return;
     }
 
-    setVisitors(data || []);
+    setIsOnline(true);
+
+    const { data, error } = await supabase
+      .from("visitors")
+      .select("*")
+      .eq("is_deleted", false)
+      .order("check_in", { ascending: false });
+
+    if (error) {
+      console.error(error);
+
+      const foundCache =
+        await loadCachedVisitors();
+
+      if (!foundCache) {
+        setVisitors([]);
+      }
+
+      return;
+    }
+
+    const freshVisitors =
+      data || [];
+
+    setVisitors(freshVisitors);
+    setUsingCachedData(false);
+
+    const savedAt =
+      await saveOfflineCache(
+        "visitors",
+        freshVisitors
+      );
+
+    setCacheSavedAt(
+      savedAt
+    );
   }
 
   async function handleSave(visitor) {
+    if (!navigator.onLine) {
+      alert(
+        "You are offline. Visitor changes cannot be saved until you reconnect."
+      );
+      return;
+    }
+
     let error;
 
     if (selectedVisitor) {
@@ -141,6 +268,13 @@ function Visitors() {
   }
 
   async function handleDelete(id) {
+  if (!navigator.onLine) {
+    alert(
+      "You are offline. Visitors cannot be deleted until you reconnect."
+    );
+    return;
+  }
+
   if (!window.confirm("Move this visitor to Recycle Bin?"))
     return;
 
@@ -188,6 +322,13 @@ function Visitors() {
 }
 
   async function handleCheckout(visitor) {
+    if (!navigator.onLine) {
+      alert(
+        "You are offline. Visitor check-out is unavailable until you reconnect."
+      );
+      return;
+    }
+
     const { error } = await supabase
       .from("visitors")
       .update({
@@ -212,6 +353,13 @@ function Visitors() {
   }
 
   function handleEdit(visitor) {
+    if (!navigator.onLine) {
+      alert(
+        "You are offline. Visitors cannot be edited until you reconnect."
+      );
+      return;
+    }
+
     setSelectedVisitor(visitor);
     setShowModal(true);
   }
@@ -249,6 +397,40 @@ function Visitors() {
         Manage visitor check-in and check-out.
       </p>
 
+      {!isOnline && (
+        <div
+          style={{
+            marginBottom: "18px",
+            padding: "12px 16px",
+            borderRadius: "10px",
+            background: "#fff7ed",
+            border: "1px solid #fdba74",
+            color: "#9a3412",
+            fontWeight: "600",
+          }}
+        >
+          📡 Offline
+          {usingCachedData
+            ? " — showing last saved data"
+            : " — no saved Visitor data is available"}
+
+          {usingCachedData &&
+            cacheSavedAt && (
+              <span
+                style={{
+                  fontWeight: "400",
+                  marginLeft: "8px",
+                }}
+              >
+                Last updated:{" "}
+                {new Date(
+                  cacheSavedAt
+                ).toLocaleString()}
+              </span>
+            )}
+        </div>
+      )}
+
       <div
         style={{
           display: "flex",
@@ -266,7 +448,23 @@ function Visitors() {
 
         <button
           className="add-btn"
+          disabled={!isOnline}
+          title={
+            !isOnline
+              ? "Reconnect to check in a visitor"
+              : "Check In Visitor"
+          }
+          style={{
+            opacity: isOnline ? 1 : 0.5,
+            cursor: isOnline
+              ? "pointer"
+              : "not-allowed",
+          }}
           onClick={() => {
+            if (!isOnline) {
+              return;
+            }
+
             setSelectedVisitor(null);
             setShowModal(true);
           }}
@@ -411,6 +609,20 @@ function Visitors() {
 
                   <button
                     className="edit-btn"
+                    disabled={!isOnline}
+                    title={
+                      !isOnline
+                        ? "Reconnect to edit"
+                        : "Edit"
+                    }
+                    style={{
+                      opacity: isOnline
+                        ? 1
+                        : 0.5,
+                      cursor: isOnline
+                        ? "pointer"
+                        : "not-allowed",
+                    }}
                     onClick={() => handleEdit(visitor)}
                   >
                     Edit
@@ -419,7 +631,21 @@ function Visitors() {
                   {visitor.status === "Checked In" && (
 
                     <button
-                      style={{ marginLeft: "8px" }}
+                      disabled={!isOnline}
+                      title={
+                        !isOnline
+                          ? "Reconnect to check out"
+                          : "Check Out"
+                      }
+                      style={{
+                        marginLeft: "8px",
+                        opacity: isOnline
+                          ? 1
+                          : 0.5,
+                        cursor: isOnline
+                          ? "pointer"
+                          : "not-allowed",
+                      }}
                       onClick={() => handleCheckout(visitor)}
                     >
                       Check Out
@@ -429,7 +655,21 @@ function Visitors() {
 
                   <button
                     className="delete-btn"
-                    style={{ marginLeft: "8px" }}
+                    disabled={!isOnline}
+                    title={
+                      !isOnline
+                        ? "Reconnect to delete"
+                        : "Delete"
+                    }
+                    style={{
+                      marginLeft: "8px",
+                      opacity: isOnline
+                        ? 1
+                        : 0.5,
+                      cursor: isOnline
+                        ? "pointer"
+                        : "not-allowed",
+                    }}
                     onClick={() => handleDelete(visitor.id)}
                   >
                     Delete
@@ -456,6 +696,7 @@ function Visitors() {
             setSelectedVisitor(null);
           }}
           onSave={handleSave}
+          isOnline={isOnline}
         />
 
       )}

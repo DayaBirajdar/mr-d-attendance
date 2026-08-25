@@ -4,6 +4,7 @@ function AddVisitorModal({
   item,
   onClose,
   onSave,
+  isOnline = true,
 }) {
   const [visitorName, setVisitorName] = useState("");
   const [company, setCompany] = useState("");
@@ -32,6 +33,13 @@ function AddVisitorModal({
 
   function handleSubmit(e) {
     e.preventDefault();
+
+    if (!navigator.onLine) {
+      alert(
+        "You are offline. Visitor changes cannot be saved until you reconnect."
+      );
+      return;
+    }
 
     onSave({
       visitor_name: visitorName,
@@ -109,6 +117,12 @@ function AddVisitorModal({
             <button
               type="submit"
               className="add-btn"
+              disabled={!isOnline}
+              title={
+                !isOnline
+                  ? "Reconnect to save"
+                  : undefined
+              }
             >
               {item ? "Update Visitor" : "Check In"}
             </button>
