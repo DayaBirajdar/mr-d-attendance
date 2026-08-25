@@ -2,6 +2,10 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { logActivity } from "../lib/activityLog";
+import {
+  readOfflineCache,
+  saveOfflineCache,
+} from "../lib/offlineCache";
 
 import VendorToolbar from "../components/vendors/VendorToolbar";
 import VendorTable from "../components/vendors/VendorTable";
@@ -13,6 +17,16 @@ function Vendors() {
   const [showModal, setShowModal] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState(null);
 
+  const [isOnline, setIsOnline] = useState(
+    navigator.onLine
+  );
+
+  const [usingCachedData, setUsingCachedData] =
+    useState(false);
+
+  const [cacheSavedAt, setCacheSavedAt] =
+    useState(null);
+
   const [searchParams] =
     useSearchParams();
 
@@ -23,6 +37,38 @@ function Vendors() {
 
   useEffect(() => {
     loadVendors();
+
+    function handleOnline() {
+      setIsOnline(true);
+      loadVendors();
+    }
+
+    function handleOffline() {
+      setIsOnline(false);
+      loadCachedVendors();
+    }
+
+    window.addEventListener(
+      "online",
+      handleOnline
+    );
+
+    window.addEventListener(
+      "offline",
+      handleOffline
+    );
+
+    return () => {
+      window.removeEventListener(
+        "online",
+        handleOnline
+      );
+
+      window.removeEventListener(
+        "offline",
+        handleOffline
+      );
+    };
   }, []);
 
   useEffect(() => {
@@ -68,7 +114,46 @@ function Vendors() {
     vendors,
   ]);
 
+  async function loadCachedVendors() {
+    const cached =
+      await readOfflineCache(
+        "vendors"
+      );
+
+    if (!cached) {
+      return false;
+    }
+
+    setVendors(
+      cached.data || []
+    );
+
+    setUsingCachedData(true);
+
+    setCacheSavedAt(
+      cached.savedAt || null
+    );
+
+    return true;
+  }
+
   async function loadVendors() {
+    if (!navigator.onLine) {
+      setIsOnline(false);
+
+      const foundCache =
+        await loadCachedVendors();
+
+      if (!foundCache) {
+        setVendors([]);
+        setUsingCachedData(false);
+      }
+
+      return;
+    }
+
+    setIsOnline(true);
+
     const { data, error } = await supabase
       .from("vendors")
       .select("*")
@@ -76,13 +161,42 @@ function Vendors() {
 
     if (error) {
       console.error(error);
+
+      const foundCache =
+        await loadCachedVendors();
+
+      if (!foundCache) {
+        setVendors([]);
+      }
+
       return;
     }
 
-    setVendors(data || []);
+    const freshVendors =
+      data || [];
+
+    setVendors(freshVendors);
+    setUsingCachedData(false);
+
+    const savedAt =
+      await saveOfflineCache(
+        "vendors",
+        freshVendors
+      );
+
+    setCacheSavedAt(
+      savedAt
+    );
   }
 
   async function handleSave(vendor) {
+    if (!navigator.onLine) {
+      alert(
+        "You are offline. Vendor changes cannot be saved until you reconnect."
+      );
+      return;
+    }
+
     let error;
 
     if (selectedVendor) {
@@ -130,6 +244,13 @@ function Vendors() {
   }
 
   async function handleDelete(id) {
+    if (!navigator.onLine) {
+      alert(
+        "You are offline. Vendors cannot be deleted until you reconnect."
+      );
+      return;
+    }
+
     const confirmDelete = window.confirm(
       "Move this vendor to Recycle Bin?"
     );
@@ -190,6 +311,13 @@ function Vendors() {
   }
 
   function handleEdit(vendor) {
+    if (!navigator.onLine) {
+      alert(
+        "You are offline. Vendors cannot be edited until you reconnect."
+      );
+      return;
+    }
+
     setSelectedVendor(vendor);
     setShowModal(true);
   }
@@ -211,10 +339,49 @@ function Vendors() {
         Manage all company vendors.
       </p>
 
+      {!isOnline && (
+        <div
+          style={{
+            marginBottom: "18px",
+            padding: "12px 16px",
+            borderRadius: "10px",
+            background: "#fff7ed",
+            border: "1px solid #fdba74",
+            color: "#9a3412",
+            fontWeight: "600",
+          }}
+        >
+          📡 Offline
+          {usingCachedData
+            ? " — showing last saved data"
+            : " — no saved Vendor data is available"}
+
+          {usingCachedData &&
+            cacheSavedAt && (
+              <span
+                style={{
+                  fontWeight: "400",
+                  marginLeft: "8px",
+                }}
+              >
+                Last updated:{" "}
+                {new Date(
+                  cacheSavedAt
+                ).toLocaleString()}
+              </span>
+            )}
+        </div>
+      )}
+
       <VendorToolbar
         search={search}
         setSearch={setSearch}
+        isOnline={isOnline}
         onAdd={() => {
+          if (!isOnline) {
+            return;
+          }
+
           setSelectedVendor(null);
           setShowModal(true);
         }}
@@ -230,6 +397,7 @@ function Vendors() {
         focusedVendorId={focusedVendorId}
         onEdit={handleEdit}
         onDelete={handleDelete}
+        isOnline={isOnline}
       />
 
       {showModal && (

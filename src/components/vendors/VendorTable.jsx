@@ -3,6 +3,7 @@ function VendorTable({
   focusedVendorId,
   onEdit,
   onDelete,
+  isOnline = true,
 }) {
   return (
     <table className="inventory-table">
@@ -47,6 +48,20 @@ function VendorTable({
               <td>
                 <button
                   className="edit-btn"
+                  disabled={!isOnline}
+                  title={
+                    !isOnline
+                      ? "Reconnect to edit"
+                      : "Edit"
+                  }
+                  style={{
+                    opacity: isOnline
+                      ? 1
+                      : 0.5,
+                    cursor: isOnline
+                      ? "pointer"
+                      : "not-allowed",
+                  }}
                   onClick={() => onEdit(vendor)}
                 >
                   ✏️
@@ -54,6 +69,20 @@ function VendorTable({
 
                 <button
                   className="delete-btn"
+                  disabled={!isOnline}
+                  title={
+                    !isOnline
+                      ? "Reconnect to delete"
+                      : "Delete"
+                  }
+                  style={{
+                    opacity: isOnline
+                      ? 1
+                      : 0.5,
+                    cursor: isOnline
+                      ? "pointer"
+                      : "not-allowed",
+                  }}
                   onClick={() => onDelete(vendor.id)}
                 >
                   🗑️
