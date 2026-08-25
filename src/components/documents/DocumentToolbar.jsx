@@ -2,6 +2,7 @@ function DocumentToolbar({
   search,
   setSearch,
   onAdd,
+  isOnline = true,
 }) {
   return (
     <div className="toolbar">
@@ -16,6 +17,18 @@ function DocumentToolbar({
 
       <button
         className="add-btn"
+        disabled={!isOnline}
+        title={
+          !isOnline
+            ? "Reconnect to upload a document"
+            : "Upload Document"
+        }
+        style={{
+          opacity: isOnline ? 1 : 0.5,
+          cursor: isOnline
+            ? "pointer"
+            : "not-allowed",
+        }}
         onClick={onAdd}
       >
         + Upload Document

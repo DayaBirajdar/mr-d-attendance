@@ -6,9 +6,17 @@ function DocumentTable({
   focusedDocumentId,
   refresh,
   onEdit,
+  isOnline = true,
 }) {
 
   async function downloadDocument(doc) {
+    if (!navigator.onLine) {
+      alert(
+        "You are offline. Documents cannot be downloaded until you reconnect."
+      );
+      return;
+    }
+
     try {
       const response = await fetch(doc.file_url);
 
@@ -67,6 +75,13 @@ function DocumentTable({
   }
 
   async function deleteDocument(id) {
+
+    if (!navigator.onLine) {
+      alert(
+        "You are offline. Documents cannot be deleted until you reconnect."
+      );
+      return;
+    }
 
     const confirmDelete = window.confirm(
       "Move this document to Recycle Bin?"
@@ -227,10 +242,33 @@ function DocumentTable({
 
                       return canPreview ? (
                         <a
-                          href={doc.file_url}
+                          href={
+                            isOnline
+                              ? doc.file_url
+                              : undefined
+                          }
                           target="_blank"
                           rel="noopener noreferrer"
                           className="document-view-btn"
+                          aria-disabled={!isOnline}
+                          title={
+                            !isOnline
+                              ? "Reconnect to view"
+                              : "View"
+                          }
+                          onClick={(e) => {
+                            if (!isOnline) {
+                              e.preventDefault();
+                            }
+                          }}
+                          style={{
+                            opacity: isOnline
+                              ? 1
+                              : 0.5,
+                            cursor: isOnline
+                              ? "pointer"
+                              : "not-allowed",
+                          }}
                         >
                           View
                         </a>
@@ -240,6 +278,20 @@ function DocumentTable({
                     <button
                       type="button"
                       className="document-download-btn"
+                      disabled={!isOnline}
+                      title={
+                        !isOnline
+                          ? "Reconnect to download"
+                          : "Download"
+                      }
+                      style={{
+                        opacity: isOnline
+                          ? 1
+                          : 0.5,
+                        cursor: isOnline
+                          ? "pointer"
+                          : "not-allowed",
+                      }}
                       onClick={() =>
                         downloadDocument(doc)
                       }
@@ -251,7 +303,21 @@ function DocumentTable({
 
                 <button
                   className="edit-btn"
-                  style={{ marginLeft: "10px" }}
+                  disabled={!isOnline}
+                  title={
+                    !isOnline
+                      ? "Reconnect to edit"
+                      : "Edit"
+                  }
+                  style={{
+                    marginLeft: "10px",
+                    opacity: isOnline
+                      ? 1
+                      : 0.5,
+                    cursor: isOnline
+                      ? "pointer"
+                      : "not-allowed",
+                  }}
                   onClick={() => onEdit(doc)}
                 >
                   Edit
@@ -259,7 +325,21 @@ function DocumentTable({
 
                 <button
                   className="delete-btn"
-                  style={{ marginLeft: "10px" }}
+                  disabled={!isOnline}
+                  title={
+                    !isOnline
+                      ? "Reconnect to delete"
+                      : "Delete"
+                  }
+                  style={{
+                    marginLeft: "10px",
+                    opacity: isOnline
+                      ? 1
+                      : 0.5,
+                    cursor: isOnline
+                      ? "pointer"
+                      : "not-allowed",
+                  }}
                   onClick={() =>
                     deleteDocument(doc.id)
                   }

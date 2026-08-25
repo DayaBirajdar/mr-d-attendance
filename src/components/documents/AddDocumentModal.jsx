@@ -6,6 +6,7 @@ function AddDocumentModal({
   item,
   onClose,
   refresh,
+  isOnline = true,
 }) {
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
@@ -25,6 +26,13 @@ function AddDocumentModal({
 
   async function handleSubmit(e) {
     e.preventDefault();
+
+    if (!navigator.onLine) {
+      alert(
+        "You are offline. Document changes cannot be saved until you reconnect."
+      );
+      return;
+    }
 
     if (!file && !item) {
       alert("Please choose a file.");
@@ -150,7 +158,15 @@ function AddDocumentModal({
           >
             <button
               type="submit"
-              disabled={uploading}
+              disabled={
+                uploading ||
+                !isOnline
+              }
+              title={
+                !isOnline
+                  ? "Reconnect to save"
+                  : undefined
+              }
             >
               {uploading
                 ? "Saving..."
