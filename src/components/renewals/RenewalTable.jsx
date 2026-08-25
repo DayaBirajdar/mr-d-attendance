@@ -6,6 +6,7 @@ function RenewalTable({
   onEdit,
   refresh,
   focusedRenewalId,
+  isOnline = true,
 }) {
   function getDaysLeft(date) {
     const today = new Date();
@@ -26,6 +27,13 @@ function RenewalTable({
   }
 
   async function deleteRenewal(id) {
+    if (!navigator.onLine) {
+      alert(
+        "You are offline. Renewals cannot be deleted until you reconnect."
+      );
+      return;
+    }
+
     const confirmDelete = window.confirm(
       "Move this renewal to Recycle Bin?"
     );
@@ -265,6 +273,20 @@ function RenewalTable({
 
                 <td>
                   <button
+                    disabled={!isOnline}
+                    title={
+                      !isOnline
+                        ? "Reconnect to edit"
+                        : "Edit"
+                    }
+                    style={{
+                      opacity: isOnline
+                        ? 1
+                        : 0.5,
+                      cursor: isOnline
+                        ? "pointer"
+                        : "not-allowed",
+                    }}
                     onClick={() =>
                       onEdit(item)
                     }
@@ -274,9 +296,21 @@ function RenewalTable({
 
                   <button
                     className="delete-btn"
+                    disabled={!isOnline}
+                    title={
+                      !isOnline
+                        ? "Reconnect to delete"
+                        : "Delete"
+                    }
                     style={{
                       marginLeft:
                         "10px",
+                      opacity: isOnline
+                        ? 1
+                        : 0.5,
+                      cursor: isOnline
+                        ? "pointer"
+                        : "not-allowed",
                     }}
                     onClick={() =>
                       deleteRenewal(

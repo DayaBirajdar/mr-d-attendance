@@ -4,6 +4,7 @@ function AddRenewalModal({
   item,
   onClose,
   onSave,
+  isOnline = true,
 }) {
   const [form, setForm] = useState({
     title: "",
@@ -45,6 +46,14 @@ function AddRenewalModal({
 
   function handleSubmit(e) {
     e.preventDefault();
+
+    if (!navigator.onLine) {
+      alert(
+        "You are offline. Renewal changes cannot be saved until you reconnect."
+      );
+      return;
+    }
+
     onSave(form);
   }
 
@@ -124,7 +133,15 @@ function AddRenewalModal({
               Cancel
             </button>
 
-            <button type="submit">
+            <button
+              type="submit"
+              disabled={!isOnline}
+              title={
+                !isOnline
+                  ? "Reconnect to save"
+                  : undefined
+              }
+            >
               {item ? "Update" : "Save"}
             </button>
 

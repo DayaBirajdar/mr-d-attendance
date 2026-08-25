@@ -3,6 +3,10 @@ import { useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { syncRenewal } from "../lib/googleSync";
 import { logActivity } from "../lib/activityLog";
+import {
+  readOfflineCache,
+  saveOfflineCache,
+} from "../lib/offlineCache";
 
 import RenewalToolbar from "../components/renewals/RenewalToolbar";
 import AddRenewalModal from "../components/renewals/AddRenewalModal";
@@ -13,6 +17,16 @@ function Renewals() {
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [selectedRenewal, setSelectedRenewal] = useState(null);
+
+  const [isOnline, setIsOnline] = useState(
+    navigator.onLine
+  );
+
+  const [usingCachedData, setUsingCachedData] =
+    useState(false);
+
+  const [cacheSavedAt, setCacheSavedAt] =
+    useState(null);
 
   const [searchParams, setSearchParams] =
     useSearchParams();
@@ -25,10 +39,55 @@ function Renewals() {
 
   useEffect(() => {
     loadRenewals();
+
+    function handleOnline() {
+      setIsOnline(true);
+      loadRenewals();
+    }
+
+    function handleOffline() {
+      setIsOnline(false);
+      loadCachedRenewals();
+    }
+
+    window.addEventListener(
+      "online",
+      handleOnline
+    );
+
+    window.addEventListener(
+      "offline",
+      handleOffline
+    );
+
+    return () => {
+      window.removeEventListener(
+        "online",
+        handleOnline
+      );
+
+      window.removeEventListener(
+        "offline",
+        handleOffline
+      );
+    };
   }, []);
 
   useEffect(() => {
     if (searchParams.get("action") === "add") {
+      if (!navigator.onLine) {
+        alert(
+          "You are offline. Adding renewals is unavailable until you reconnect."
+        );
+
+        setSearchParams(
+          {},
+          { replace: true }
+        );
+
+        return;
+      }
+
       setSelectedRenewal(null);
       setShowModal(true);
 
@@ -84,7 +143,46 @@ function Renewals() {
   ]);
 
 
+  async function loadCachedRenewals() {
+    const cached =
+      await readOfflineCache(
+        "renewals"
+      );
+
+    if (!cached) {
+      return false;
+    }
+
+    setRenewals(
+      cached.data || []
+    );
+
+    setUsingCachedData(true);
+
+    setCacheSavedAt(
+      cached.savedAt || null
+    );
+
+    return true;
+  }
+
   async function loadRenewals() {
+    if (!navigator.onLine) {
+      setIsOnline(false);
+
+      const foundCache =
+        await loadCachedRenewals();
+
+      if (!foundCache) {
+        setRenewals([]);
+        setUsingCachedData(false);
+      }
+
+      return;
+    }
+
+    setIsOnline(true);
+
     const { data, error } = await supabase
       .from("renewals")
       .select("*")
@@ -92,13 +190,42 @@ function Renewals() {
 
     if (error) {
       console.error(error);
+
+      const foundCache =
+        await loadCachedRenewals();
+
+      if (!foundCache) {
+        setRenewals([]);
+      }
+
       return;
     }
 
-    setRenewals(data || []);
+    const freshRenewals =
+      data || [];
+
+    setRenewals(freshRenewals);
+    setUsingCachedData(false);
+
+    const savedAt =
+      await saveOfflineCache(
+        "renewals",
+        freshRenewals
+      );
+
+    setCacheSavedAt(
+      savedAt
+    );
   }
 
   async function handleSave(renewal) {
+  if (!navigator.onLine) {
+    alert(
+      "You are offline. Renewal changes cannot be saved until you reconnect."
+    );
+    return;
+  }
+
   let error;
 
   if (selectedRenewal) {
@@ -182,10 +309,49 @@ function Renewals() {
         Manage all company renewals.
       </p>
 
+      {!isOnline && (
+        <div
+          style={{
+            marginBottom: "18px",
+            padding: "12px 16px",
+            borderRadius: "10px",
+            background: "#fff7ed",
+            border: "1px solid #fdba74",
+            color: "#9a3412",
+            fontWeight: "600",
+          }}
+        >
+          📡 Offline
+          {usingCachedData
+            ? " — showing last saved data"
+            : " — no saved Renewal data is available"}
+
+          {usingCachedData &&
+            cacheSavedAt && (
+              <span
+                style={{
+                  fontWeight: "400",
+                  marginLeft: "8px",
+                }}
+              >
+                Last updated:{" "}
+                {new Date(
+                  cacheSavedAt
+                ).toLocaleString()}
+              </span>
+            )}
+        </div>
+      )}
+
       <RenewalToolbar
         search={search}
         setSearch={setSearch}
+        isOnline={isOnline}
         onAdd={() => {
+          if (!isOnline) {
+            return;
+          }
+
           setSelectedRenewal(null);
           setShowModal(true);
         }}
@@ -197,14 +363,19 @@ function Renewals() {
       </div>
 
       <RenewalTable
-  renewals={filteredRenewals}
-  focusedRenewalId={focusedRenewalId}
-  refresh={loadRenewals}
-  onEdit={(item) => {
-    setSelectedRenewal(item);
-    setShowModal(true);
-  }}
-/>
+        renewals={filteredRenewals}
+        focusedRenewalId={focusedRenewalId}
+        refresh={loadRenewals}
+        isOnline={isOnline}
+        onEdit={(item) => {
+          if (!isOnline) {
+            return;
+          }
+
+          setSelectedRenewal(item);
+          setShowModal(true);
+        }}
+      />
 
       {showModal && (
         <AddRenewalModal
@@ -214,6 +385,7 @@ function Renewals() {
             setSelectedRenewal(null);
           }}
           onSave={handleSave}
+          isOnline={isOnline}
         />
       )}
 
