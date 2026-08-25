@@ -1,4 +1,9 @@
-function ExpenseToolbar({ search, setSearch, onAdd }) {
+function ExpenseToolbar({
+  search,
+  setSearch,
+  onAdd,
+  isOnline = true,
+}) {
   return (
     <div className="inventory-toolbar">
 
@@ -11,6 +16,18 @@ function ExpenseToolbar({ search, setSearch, onAdd }) {
 
       <button
         className="add-btn"
+        disabled={!isOnline}
+        title={
+          !isOnline
+            ? "Reconnect to add expense"
+            : "Add Expense"
+        }
+        style={{
+          opacity: isOnline ? 1 : 0.5,
+          cursor: isOnline
+            ? "pointer"
+            : "not-allowed",
+        }}
         onClick={onAdd}
       >
         + Add Expense

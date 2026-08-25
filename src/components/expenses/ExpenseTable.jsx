@@ -3,6 +3,7 @@ function ExpenseTable({
   focusedExpenseId,
   onEdit,
   onDelete,
+  isOnline = true,
 }) {
   return (
     <table className="inventory-table">
@@ -73,6 +74,20 @@ function ExpenseTable({
               <td>
                 <button
                   className="edit-btn"
+                  disabled={!isOnline}
+                  title={
+                    !isOnline
+                      ? "Reconnect to edit"
+                      : "Edit"
+                  }
+                  style={{
+                    opacity: isOnline
+                      ? 1
+                      : 0.5,
+                    cursor: isOnline
+                      ? "pointer"
+                      : "not-allowed",
+                  }}
                   onClick={() => onEdit(expense)}
                 >
                   ✏️
@@ -80,8 +95,22 @@ function ExpenseTable({
 
                 <button
                   className="delete-btn"
+                  disabled={!isOnline}
+                  title={
+                    !isOnline
+                      ? "Reconnect to delete"
+                      : "Delete"
+                  }
                   onClick={() => onDelete(expense.id)}
-                  style={{ marginLeft: "10px" }}
+                  style={{
+                    marginLeft: "10px",
+                    opacity: isOnline
+                      ? 1
+                      : 0.5,
+                    cursor: isOnline
+                      ? "pointer"
+                      : "not-allowed",
+                  }}
                 >
                   🗑️
                 </button>

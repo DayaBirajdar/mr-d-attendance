@@ -2,6 +2,10 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { logActivity } from "../lib/activityLog";
+import {
+  readOfflineCache,
+  saveOfflineCache,
+} from "../lib/offlineCache";
 
 import ExpenseToolbar from "../components/expenses/ExpenseToolbar";
 import ExpenseTable from "../components/expenses/ExpenseTable";
@@ -14,6 +18,16 @@ function Expenses() {
   const [showModal, setShowModal] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState(null);
 
+  const [isOnline, setIsOnline] = useState(
+    navigator.onLine
+  );
+
+  const [usingCachedData, setUsingCachedData] =
+    useState(false);
+
+  const [cacheSavedAt, setCacheSavedAt] =
+    useState(null);
+
   const [searchParams, setSearchParams] =
     useSearchParams();
 
@@ -25,10 +39,55 @@ function Expenses() {
 
   useEffect(() => {
     loadExpenses();
+
+    function handleOnline() {
+      setIsOnline(true);
+      loadExpenses();
+    }
+
+    function handleOffline() {
+      setIsOnline(false);
+      loadCachedExpenses();
+    }
+
+    window.addEventListener(
+      "online",
+      handleOnline
+    );
+
+    window.addEventListener(
+      "offline",
+      handleOffline
+    );
+
+    return () => {
+      window.removeEventListener(
+        "online",
+        handleOnline
+      );
+
+      window.removeEventListener(
+        "offline",
+        handleOffline
+      );
+    };
   }, []);
 
   useEffect(() => {
     if (searchParams.get("action") === "add") {
+      if (!navigator.onLine) {
+        alert(
+          "You are offline. Adding expenses is unavailable until you reconnect."
+        );
+
+        setSearchParams(
+          {},
+          { replace: true }
+        );
+
+        return;
+      }
+
       setSelectedExpense(null);
       setShowModal(true);
 
@@ -84,7 +143,46 @@ function Expenses() {
   ]);
 
 
+  async function loadCachedExpenses() {
+    const cached =
+      await readOfflineCache(
+        "expenses"
+      );
+
+    if (!cached) {
+      return false;
+    }
+
+    setExpenses(
+      cached.data || []
+    );
+
+    setUsingCachedData(true);
+
+    setCacheSavedAt(
+      cached.savedAt || null
+    );
+
+    return true;
+  }
+
   async function loadExpenses() {
+    if (!navigator.onLine) {
+      setIsOnline(false);
+
+      const foundCache =
+        await loadCachedExpenses();
+
+      if (!foundCache) {
+        setExpenses([]);
+        setUsingCachedData(false);
+      }
+
+      return;
+    }
+
+    setIsOnline(true);
+
     const { data, error } = await supabase
       .from("expenses")
       .select("*")
@@ -93,13 +191,42 @@ function Expenses() {
 
     if (error) {
       console.error(error);
+
+      const foundCache =
+        await loadCachedExpenses();
+
+      if (!foundCache) {
+        setExpenses([]);
+      }
+
       return;
     }
 
-    setExpenses(data || []);
+    const freshExpenses =
+      data || [];
+
+    setExpenses(freshExpenses);
+    setUsingCachedData(false);
+
+    const savedAt =
+      await saveOfflineCache(
+        "expenses",
+        freshExpenses
+      );
+
+    setCacheSavedAt(
+      savedAt
+    );
   }
 
   async function handleSave(expense) {
+    if (!navigator.onLine) {
+      alert(
+        "You are offline. Expense changes cannot be saved until you reconnect."
+      );
+      return;
+    }
+
     let error;
 
     if (selectedExpense) {
@@ -138,6 +265,13 @@ function Expenses() {
   }
 
   async function handleDelete(id) {
+    if (!navigator.onLine) {
+      alert(
+        "You are offline. Expenses cannot be deleted until you reconnect."
+      );
+      return;
+    }
+
     if (!window.confirm("Move this expense to Recycle Bin?"))
       return;
 
@@ -187,6 +321,13 @@ function Expenses() {
   }
 
   function handleEdit(expense) {
+    if (!navigator.onLine) {
+      alert(
+        "You are offline. Expenses cannot be edited until you reconnect."
+      );
+      return;
+    }
+
     setSelectedExpense(expense);
     setShowModal(true);
   }
@@ -240,10 +381,49 @@ function Expenses() {
         Manage all office expenses.
       </p>
 
+      {!isOnline && (
+        <div
+          style={{
+            marginBottom: "18px",
+            padding: "12px 16px",
+            borderRadius: "10px",
+            background: "#fff7ed",
+            border: "1px solid #fdba74",
+            color: "#9a3412",
+            fontWeight: "600",
+          }}
+        >
+          📡 Offline
+          {usingCachedData
+            ? " — showing last saved data"
+            : " — no saved Expense data is available"}
+
+          {usingCachedData &&
+            cacheSavedAt && (
+              <span
+                style={{
+                  fontWeight: "400",
+                  marginLeft: "8px",
+                }}
+              >
+                Last updated:{" "}
+                {new Date(
+                  cacheSavedAt
+                ).toLocaleString()}
+              </span>
+            )}
+        </div>
+      )}
+
       <ExpenseToolbar
         search={search}
         setSearch={setSearch}
+        isOnline={isOnline}
         onAdd={() => {
+          if (!isOnline) {
+            return;
+          }
+
           setSelectedExpense(null);
           setShowModal(true);
         }}
@@ -285,6 +465,7 @@ function Expenses() {
         focusedExpenseId={focusedExpenseId}
         onEdit={handleEdit}
         onDelete={handleDelete}
+        isOnline={isOnline}
       />
 
       {showModal && (
