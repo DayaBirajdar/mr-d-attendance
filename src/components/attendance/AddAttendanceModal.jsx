@@ -114,8 +114,12 @@ function AddAttendanceModal({
           item.remarks || "",
       });
 
-      if (item.selfie_url) {
-        setSelfiePreview(item.selfie_url);
+      if (
+        item.selfie_display_url
+      ) {
+        setSelfiePreview(
+          item.selfie_display_url
+        );
       }
 
     }

@@ -46,12 +46,14 @@ function AttendanceTable({
 
                 {/* Attendance Selfie */}
                 <td>
-                  {item.selfie_url ? (
+                  {item.selfie_display_url ? (
                     <img
-                      src={item.selfie_url}
+                      src={item.selfie_display_url}
                       alt="Attendance Selfie"
                       onClick={() =>
-                        setPreviewImage(item.selfie_url)
+                        setPreviewImage(
+                          item.selfie_display_url
+                        )
                       }
                       style={{
                         width: "60px",

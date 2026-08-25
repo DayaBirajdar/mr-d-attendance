@@ -785,22 +785,9 @@ function EmployeeAttendance() {
     }
 
 
-    const {
-      data,
-    } =
-      supabase.storage
-        .from(
-          "attendance-selfies"
-        )
-        .getPublicUrl(
-          fileName
-        );
-
-
-    return (
-      data?.publicUrl ||
-      null
-    );
+    // Store only the Storage object path.
+    // The bucket can therefore remain private.
+    return fileName;
 
   }
 

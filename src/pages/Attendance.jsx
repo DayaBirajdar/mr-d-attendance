@@ -12,6 +12,113 @@ import AttendanceTable from "../components/attendance/AttendanceTable";
 import MonthlyAttendanceTable from "../components/attendance/MonthlyAttendanceTable";
 import AddAttendanceModal from "../components/attendance/AddAttendanceModal";
 
+const ATTENDANCE_SELFIE_BUCKET =
+  "attendance-selfies";
+
+
+function getAttendanceSelfiePath(
+  value
+) {
+  if (!value) {
+    return "";
+  }
+
+  // New records store only the object path.
+  if (
+    !value.startsWith("http://") &&
+    !value.startsWith("https://")
+  ) {
+    return value;
+  }
+
+  // Support older rows that stored a Supabase public URL.
+  const marker =
+    `/storage/v1/object/public/${ATTENDANCE_SELFIE_BUCKET}/`;
+
+  const markerIndex =
+    value.indexOf(marker);
+
+  if (markerIndex === -1) {
+    return "";
+  }
+
+  const encodedPath =
+    value.slice(
+      markerIndex +
+        marker.length
+    )
+      .split("?")[0];
+
+  try {
+    return decodeURIComponent(
+      encodedPath
+    );
+  } catch {
+    return encodedPath;
+  }
+}
+
+
+async function addSignedSelfieUrls(
+  rows
+) {
+  return Promise.all(
+    (rows || []).map(
+      async (item) => {
+        const storagePath =
+          getAttendanceSelfiePath(
+            item.selfie_url
+          );
+
+        if (!storagePath) {
+          return {
+            ...item,
+            selfie_display_url:
+              "",
+          };
+        }
+
+        const {
+          data,
+          error,
+        } =
+          await supabase.storage
+            .from(
+              ATTENDANCE_SELFIE_BUCKET
+            )
+            .createSignedUrl(
+              storagePath,
+              60 * 60
+            );
+
+        if (error) {
+          console.error(
+            "Attendance selfie signed URL error:",
+            error
+          );
+
+          return {
+            ...item,
+            selfie_display_url:
+              "",
+          };
+        }
+
+        return {
+          ...item,
+
+          // Display-only field.
+          // Never save this URL back to attendance.
+          selfie_display_url:
+            data?.signedUrl ||
+            "",
+        };
+      }
+    )
+  );
+}
+
+
 function Attendance() {
   const [attendance, setAttendance] = useState([]);
   const [employees, setEmployees] = useState([]);
@@ -469,12 +576,19 @@ function Attendance() {
     const freshAttendance =
       data || [];
 
+    const attendanceWithSignedSelfies =
+      await addSignedSelfieUrls(
+        freshAttendance
+      );
+
     setAttendance(
-      freshAttendance
+      attendanceWithSignedSelfies
     );
 
     setUsingCachedData(false);
 
+    // Cache raw database values rather than
+    // temporary signed URLs.
     const savedAt =
       await saveOfflineCache(
         "attendance",
@@ -499,7 +613,7 @@ function Attendance() {
 
     // Preserve existing selfie when editing.
     // Replace it only when a new verified selfie is captured.
-    let selfieUrl =
+    let selfiePath =
       selectedAttendance?.selfie_url || "";
 
     if (record.selfie) {
@@ -526,12 +640,39 @@ function Attendance() {
         return;
       }
 
-      const { data } =
-        supabase.storage
-          .from("attendance-selfies")
-          .getPublicUrl(fileName);
+      selfiePath =
+        fileName;
 
-      selfieUrl = data.publicUrl;
+      const {
+        data:
+          signedData,
+        error:
+          signedError,
+      } =
+        await supabase.storage
+          .from(
+            "attendance-selfies"
+          )
+          .createSignedUrl(
+            fileName,
+            5 * 60
+          );
+
+      if (
+        signedError ||
+        !signedData?.signedUrl
+      ) {
+        console.error(
+          "Unable to create attendance selfie signed URL:",
+          signedError
+        );
+
+        alert(
+          "The attendance selfie was uploaded, but its secure preview could not be created."
+        );
+
+        return;
+      }
 
       const { compareFaces } =
         await import(
@@ -541,7 +682,7 @@ function Attendance() {
       const result =
         await compareFaces(
           record.profilePhoto,
-          selfieUrl
+          signedData.signedUrl
         );
 
       console.log(
@@ -578,8 +719,10 @@ function Attendance() {
       remarks:
         record.remarks,
 
+      // Store only the Storage path.
+      // Never save temporary signed URLs.
       selfie_url:
-        selfieUrl,
+        selfiePath,
     };
 
     let error;
