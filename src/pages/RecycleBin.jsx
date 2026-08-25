@@ -1,10 +1,24 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { logActivity } from "../lib/activityLog";
+import {
+  readOfflineCache,
+  saveOfflineCache,
+} from "../lib/offlineCache";
 import "../styles/RecycleBin.css";
 
 function RecycleBin() {
   const [items, setItems] = useState([]);
+
+  const [isOnline, setIsOnline] = useState(
+    navigator.onLine
+  );
+
+  const [usingCachedData, setUsingCachedData] =
+    useState(false);
+
+  const [cacheSavedAt, setCacheSavedAt] =
+    useState(null);
 
   function getActivityModule(table) {
     const modules = {
@@ -37,9 +51,80 @@ function RecycleBin() {
 
   useEffect(() => {
     loadRecycleBin();
+
+    function handleOnline() {
+      setIsOnline(true);
+      loadRecycleBin();
+    }
+
+    function handleOffline() {
+      setIsOnline(false);
+      loadCachedRecycleBin();
+    }
+
+    window.addEventListener(
+      "online",
+      handleOnline
+    );
+
+    window.addEventListener(
+      "offline",
+      handleOffline
+    );
+
+    return () => {
+      window.removeEventListener(
+        "online",
+        handleOnline
+      );
+
+      window.removeEventListener(
+        "offline",
+        handleOffline
+      );
+    };
   }, []);
 
+  async function loadCachedRecycleBin() {
+    const cached =
+      await readOfflineCache(
+        "recycle-bin"
+      );
+
+    if (!cached) {
+      return false;
+    }
+
+    setItems(
+      cached.data || []
+    );
+
+    setUsingCachedData(true);
+
+    setCacheSavedAt(
+      cached.savedAt || null
+    );
+
+    return true;
+  }
+
   async function loadRecycleBin() {
+    if (!navigator.onLine) {
+      setIsOnline(false);
+
+      const foundCache =
+        await loadCachedRecycleBin();
+
+      if (!foundCache) {
+        setItems([]);
+        setUsingCachedData(false);
+      }
+
+      return;
+    }
+
+    setIsOnline(true);
+
     const { data, error } = await supabase
       .from("recycle_bin")
       .select("*")
@@ -47,13 +132,43 @@ function RecycleBin() {
 
     if (error) {
       console.error(error);
+
+      const foundCache =
+        await loadCachedRecycleBin();
+
+      if (!foundCache) {
+        setItems([]);
+      }
+
       return;
     }
 
-    setItems(data || []);
+    const freshItems =
+      data || [];
+
+    setItems(freshItems);
+    setUsingCachedData(false);
+
+    const savedAt =
+      await saveOfflineCache(
+        "recycle-bin",
+        freshItems
+      );
+
+    setCacheSavedAt(
+      savedAt
+    );
   }
 
   async function restoreItem(item) {
+    if (!navigator.onLine) {
+      alert(
+        "You are offline. Items cannot be restored until you reconnect."
+      );
+
+      return;
+    }
+
     const asset = { ...item.data };
 
     // Remove old database-generated values before restoring
@@ -94,6 +209,14 @@ function RecycleBin() {
   }
 
   async function deleteForever(item) {
+    if (!navigator.onLine) {
+      alert(
+        "You are offline. Items cannot be permanently deleted until you reconnect."
+      );
+
+      return;
+    }
+
     if (!window.confirm("Delete permanently?")) return;
 
     const { error } = await supabase
@@ -122,6 +245,40 @@ function RecycleBin() {
   return (
     <div className="recycle-page">
       <h1>🗑 Recycle Bin</h1>
+
+      {!isOnline && (
+        <div
+          style={{
+            marginBottom: "18px",
+            padding: "12px 16px",
+            borderRadius: "10px",
+            background: "#fff7ed",
+            border: "1px solid #fdba74",
+            color: "#9a3412",
+            fontWeight: "600",
+          }}
+        >
+          📡 Offline
+          {usingCachedData
+            ? " — showing last saved Recycle Bin data"
+            : " — no saved Recycle Bin data is available"}
+
+          {usingCachedData &&
+            cacheSavedAt && (
+              <span
+                style={{
+                  fontWeight: "400",
+                  marginLeft: "8px",
+                }}
+              >
+                Last updated:{" "}
+                {new Date(
+                  cacheSavedAt
+                ).toLocaleString()}
+              </span>
+            )}
+        </div>
+      )}
 
       <table className="inventory-table">
         <thead>
@@ -224,6 +381,20 @@ const displayStatus =
 
                   <td>
                     <button
+                      disabled={!isOnline}
+                      title={
+                        !isOnline
+                          ? "Reconnect to restore"
+                          : "Restore"
+                      }
+                      style={{
+                        opacity: isOnline
+                          ? 1
+                          : 0.5,
+                        cursor: isOnline
+                          ? "pointer"
+                          : "not-allowed",
+                      }}
                       onClick={() =>
                         restoreItem(item)
                       }
@@ -232,10 +403,22 @@ const displayStatus =
                     </button>
 
                     <button
+                      disabled={!isOnline}
+                      title={
+                        !isOnline
+                          ? "Reconnect to delete permanently"
+                          : "Delete Forever"
+                      }
                       style={{
                         marginLeft: 10,
                         background: "red",
                         color: "white",
+                        opacity: isOnline
+                          ? 1
+                          : 0.5,
+                        cursor: isOnline
+                          ? "pointer"
+                          : "not-allowed",
                       }}
                       onClick={() =>
                         deleteForever(item)
