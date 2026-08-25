@@ -119,19 +119,9 @@ function EmployeeAttendance() {
     const {
       data,
       error,
-    } = await supabase
-      .from("attendance_settings")
-      .select(
-        "office_start_time, grace_period_minutes"
-      )
-      .order(
-        "id",
-        {
-          ascending: true,
-        }
-      )
-      .limit(1)
-      .maybeSingle();
+    } = await supabase.rpc(
+      "mrd_public_attendance_settings"
+    );
 
 
     if (error) {
@@ -292,24 +282,13 @@ function EmployeeAttendance() {
       const {
         data,
         error,
-      } = await supabase
-        .from("employees")
-        .select(
-          "id, employee_id, full_name, department, photo_url, status, is_deleted"
-        )
-        .eq(
-          "employee_id",
-          cleanEmployeeId
-        )
-        .eq(
-          "status",
-          "Active"
-        )
-        .eq(
-          "is_deleted",
-          false
-        )
-        .maybeSingle();
+      } = await supabase.rpc(
+        "mrd_public_employee_lookup",
+        {
+          p_employee_id:
+            cleanEmployeeId,
+        }
+      );
 
 
       if (error) {
@@ -937,28 +916,13 @@ function EmployeeAttendance() {
       error:
         attendanceError,
     } =
-      await supabase
-        .from(
-          "attendance"
-        )
-        .select("*")
-        .eq(
-          "employee_id",
-          employee.id
-        )
-        .eq(
-          "attendance_date",
-          today
-        )
-        .order(
-          "id",
-          {
-            ascending:
-              false,
-          }
-        )
-        .limit(1)
-        .maybeSingle();
+      await supabase.rpc(
+        "mrd_public_today_attendance",
+        {
+          p_employee_id:
+            employee.id,
+        }
+      );
 
 
     if (
@@ -999,41 +963,22 @@ function EmployeeAttendance() {
       const {
         error,
       } =
-        await supabase
-          .from(
-            "attendance"
-          )
-          .insert({
-            employee_id:
+        await supabase.rpc(
+          "mrd_public_check_in",
+          {
+            p_employee_id:
               employee.id,
 
-            attendance_date:
-              today,
-
-            check_in:
+            p_check_in:
               checkIn,
 
-            check_out:
-              null,
-
-            working_hours:
-              "",
-
-            late_minutes:
-              lateMinutes,
-
-            attendance_status:
-              "Present",
-
-            status:
-              "Present",
-
-            remarks:
-              "Employee self check-in",
-
-            selfie_url:
+            p_selfie_url:
               selfieUrl,
-          });
+
+            p_late_minutes:
+              lateMinutes,
+          }
+        );
 
 
       if (error) {
@@ -1147,28 +1092,22 @@ function EmployeeAttendance() {
       const {
         error,
       } =
-        await supabase
-          .from(
-            "attendance"
-          )
-          .update({
-            check_out:
+        await supabase.rpc(
+          "mrd_public_check_out",
+          {
+            p_employee_id:
+              employee.id,
+
+            p_check_out:
               checkOut,
 
-            working_hours:
-              workingHours,
-
-            remarks:
-              "Employee self check-out",
-
-            selfie_url:
+            p_selfie_url:
               selfieUrl,
-          })
-          .eq(
-            "id",
-            todayAttendance
-              .id
-          );
+
+            p_working_hours:
+              workingHours,
+          }
+        );
 
 
       if (error) {
