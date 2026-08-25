@@ -1,4 +1,5 @@
 import React, {
+  useEffect,
   useRef,
   useState,
 } from "react";
@@ -49,6 +50,11 @@ function EmployeeAttendance() {
   const [selfiePreview, setSelfiePreview] =
     useState("");
 
+  const [isOnline, setIsOnline] =
+    useState(
+      navigator.onLine
+    );
+
   // Attendance settings
   const [officeStartTime, setOfficeStartTime] =
     useState("10:00");
@@ -57,6 +63,51 @@ function EmployeeAttendance() {
     gracePeriodMinutes,
     setGracePeriodMinutes,
   ] = useState(15);
+
+
+  useEffect(() => {
+    function handleOnline() {
+      setIsOnline(true);
+    }
+
+    function handleOffline() {
+      setIsOnline(false);
+
+      setShowCamera(false);
+      setCameraReady(false);
+      setVerifying(false);
+
+      setMessageType(
+        "error"
+      );
+
+      setMessage(
+        "You are offline. Employee attendance requires an internet connection."
+      );
+    }
+
+    window.addEventListener(
+      "online",
+      handleOnline
+    );
+
+    window.addEventListener(
+      "offline",
+      handleOffline
+    );
+
+    return () => {
+      window.removeEventListener(
+        "online",
+        handleOnline
+      );
+
+      window.removeEventListener(
+        "offline",
+        handleOffline
+      );
+    };
+  }, []);
 
 
   // ---------------------------------------------------------
@@ -191,6 +242,19 @@ function EmployeeAttendance() {
   async function findEmployee(e) {
 
     e.preventDefault();
+
+    if (!navigator.onLine) {
+
+      setMessageType(
+        "error"
+      );
+
+      setMessage(
+        "You are offline. Employee ID verification requires an internet connection."
+      );
+
+      return;
+    }
 
     const cleanEmployeeId =
       employeeId.trim();
@@ -331,6 +395,19 @@ function EmployeeAttendance() {
   // ---------------------------------------------------------
 
   async function openCamera() {
+
+    if (!navigator.onLine) {
+
+      setMessageType(
+        "error"
+      );
+
+      setMessage(
+        "You are offline. Camera attendance is unavailable until you reconnect."
+      );
+
+      return;
+    }
 
     if (!employee) {
 
@@ -533,6 +610,19 @@ function EmployeeAttendance() {
   // ---------------------------------------------------------
 
   async function captureSelfie() {
+
+    if (!navigator.onLine) {
+
+      setMessageType(
+        "error"
+      );
+
+      setMessage(
+        "You are offline. Face verification requires an internet connection."
+      );
+
+      return;
+    }
 
     if (
       !webcamRef.current ||
@@ -743,6 +833,19 @@ function EmployeeAttendance() {
   async function markAttendance(
     selfieFile
   ) {
+
+    if (!navigator.onLine) {
+
+      setMessageType(
+        "error"
+      );
+
+      setMessage(
+        "You are offline. Attendance cannot be marked until you reconnect."
+      );
+
+      return;
+    }
 
     // Always read latest attendance settings
     // before calculating late minutes.
@@ -1233,6 +1336,43 @@ function EmployeeAttendance() {
         </div>
 
 
+        {!isOnline && (
+
+          <div
+            style={{
+              marginBottom:
+                18,
+
+              padding:
+                "12px 16px",
+
+              borderRadius:
+                10,
+
+              background:
+                "#fff7ed",
+
+              border:
+                "1px solid #fdba74",
+
+              color:
+                "#9a3412",
+
+              fontWeight:
+                600,
+
+              textAlign:
+                "left",
+            }}
+          >
+
+            📡 Offline — Employee attendance is unavailable until you reconnect.
+
+          </div>
+
+        )}
+
+
         {!employee ? (
 
           <form
@@ -1262,6 +1402,16 @@ function EmployeeAttendance() {
 
               value={
                 employeeId
+              }
+
+              disabled={
+                !isOnline
+              }
+
+              title={
+                !isOnline
+                  ? "Reconnect to verify Employee ID"
+                  : undefined
               }
 
               onChange={(e) =>
@@ -1304,7 +1454,8 @@ function EmployeeAttendance() {
               type="submit"
 
               disabled={
-                loadingEmployee
+                loadingEmployee ||
+                !isOnline
               }
 
               style={{
@@ -1493,7 +1644,14 @@ function EmployeeAttendance() {
                 }
 
                 disabled={
-                  verifying
+                  verifying ||
+                  !isOnline
+                }
+
+                title={
+                  !isOnline
+                    ? "Reconnect to verify face"
+                    : undefined
                 }
 
                 style={{
@@ -1649,7 +1807,8 @@ function EmployeeAttendance() {
 
                   disabled={
                     !cameraReady ||
-                    verifying
+                    verifying ||
+                    !isOnline
                   }
 
                   style={{
