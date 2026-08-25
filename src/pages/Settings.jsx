@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+import {
+  readOfflineCache,
+  saveOfflineCache,
+} from "../lib/offlineCache";
 
 function Settings() {
   const [settingsId, setSettingsId] =
@@ -35,11 +39,154 @@ function Settings() {
   const [message, setMessage] =
     useState("");
 
+  const [isOnline, setIsOnline] =
+    useState(
+      navigator.onLine
+    );
+
+  const [
+    usingCachedData,
+    setUsingCachedData,
+  ] = useState(false);
+
+  const [
+    cacheSavedAt,
+    setCacheSavedAt,
+  ] = useState(null);
+
   useEffect(() => {
     loadSettings();
+
+    function handleOnline() {
+      setIsOnline(true);
+      loadSettings();
+    }
+
+    function handleOffline() {
+      setIsOnline(false);
+      loadCachedSettings();
+    }
+
+    window.addEventListener(
+      "online",
+      handleOnline
+    );
+
+    window.addEventListener(
+      "offline",
+      handleOffline
+    );
+
+    return () => {
+      window.removeEventListener(
+        "online",
+        handleOnline
+      );
+
+      window.removeEventListener(
+        "offline",
+        handleOffline
+      );
+    };
   }, []);
 
+  async function loadCachedSettings() {
+    const cached =
+      await readOfflineCache(
+        "attendance-settings-page"
+      );
+
+    if (
+      !cached?.data?.[0]
+    ) {
+      setUsingCachedData(false);
+      setLoading(false);
+
+      return false;
+    }
+
+    const data =
+      cached.data[0];
+
+    setSettingsId(
+      data.id || null
+    );
+
+    setOfficeStart(
+      data.office_start_time
+        ?.slice(0, 5) ||
+      "10:00"
+    );
+
+    setOfficeEnd(
+      data.office_end_time
+        ?.slice(0, 5) ||
+      "19:00"
+    );
+
+    setGracePeriod(
+      Number(
+        data.grace_period_minutes ??
+        15
+      )
+    );
+
+    setFullDayHours(
+      Number(
+        data.full_day_minutes ??
+        480
+      ) / 60
+    );
+
+    setHalfDayHours(
+      Number(
+        data.half_day_minutes ??
+        240
+      ) / 60
+    );
+
+    setSaturdayOff(
+      Boolean(
+        data.saturday_off
+      )
+    );
+
+    setSundayOff(
+      Boolean(
+        data.sunday_off
+      )
+    );
+
+    setCacheSavedAt(
+      cached.savedAt || null
+    );
+
+    setUsingCachedData(true);
+    setLoading(false);
+
+    return true;
+  }
+
+
   async function loadSettings() {
+    if (!navigator.onLine) {
+      setIsOnline(false);
+      setLoading(true);
+      setMessage("");
+
+      const foundCache =
+        await loadCachedSettings();
+
+      if (!foundCache) {
+        setMessage(
+          "❌ No saved attendance settings are available offline."
+        );
+      }
+
+      return;
+    }
+
+    setIsOnline(true);
     setLoading(true);
     setMessage("");
 
@@ -110,11 +257,35 @@ function Settings() {
       );
     }
 
+    if (data) {
+      const savedAt =
+        await saveOfflineCache(
+          "attendance-settings-page",
+          [data]
+        );
+
+      if (savedAt) {
+        setCacheSavedAt(
+          savedAt
+        );
+      }
+
+      setUsingCachedData(false);
+    }
+
     setLoading(false);
   }
 
   async function saveSettings(e) {
     e.preventDefault();
+
+    if (!navigator.onLine) {
+      setMessage(
+        "❌ You are offline. Attendance settings cannot be saved until you reconnect."
+      );
+
+      return;
+    }
 
     if (!settingsId) {
       setMessage(
@@ -227,6 +398,8 @@ function Settings() {
       "✅ Attendance settings saved successfully."
     );
 
+    await loadSettings();
+
     setSaving(false);
   }
 
@@ -274,6 +447,40 @@ function Settings() {
           and office working hours.
         </p>
       </div>
+
+      {!isOnline && (
+        <div
+          style={{
+            marginBottom: "20px",
+            padding: "12px 16px",
+            borderRadius: "10px",
+            background: "#fff7ed",
+            border: "1px solid #fdba74",
+            color: "#9a3412",
+            fontWeight: "600",
+          }}
+        >
+          📡 Offline
+          {usingCachedData
+            ? " — showing last saved Attendance Settings"
+            : " — no saved Attendance Settings are available"}
+
+          {usingCachedData &&
+            cacheSavedAt && (
+              <span
+                style={{
+                  fontWeight: "400",
+                  marginLeft: "8px",
+                }}
+              >
+                Last updated:{" "}
+                {new Date(
+                  cacheSavedAt
+                ).toLocaleString()}
+              </span>
+            )}
+        </div>
+      )}
 
       <form
         onSubmit={saveSettings}
@@ -546,7 +753,15 @@ function Settings() {
 
         <button
           type="submit"
-          disabled={saving}
+          disabled={
+            saving ||
+            !isOnline
+          }
+          title={
+            !isOnline
+              ? "Reconnect to save Attendance Settings"
+              : undefined
+          }
           style={{
             marginTop: "30px",
             border: "none",
@@ -556,12 +771,17 @@ function Settings() {
             borderRadius: "12px",
             fontWeight: "700",
             fontSize: "15px",
-            cursor: saving
-              ? "not-allowed"
-              : "pointer",
-            opacity: saving
-              ? 0.7
-              : 1,
+            cursor:
+              saving ||
+              !isOnline
+                ? "not-allowed"
+                : "pointer",
+
+            opacity:
+              saving ||
+              !isOnline
+                ? 0.7
+                : 1,
           }}
         >
           {saving
